@@ -1,0 +1,3 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://blubug.me:8001/bakery_auth
