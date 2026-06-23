@@ -4,14 +4,17 @@ import com.shah_s.bakery_auth_service.dto.AuthResponse;
 import com.shah_s.bakery_auth_service.dto.LoginRequest;
 import com.shah_s.bakery_auth_service.dto.RegisterRequest;
 import com.shah_s.bakery_auth_service.entity.User;
-import com.shah_s.bakery_auth_service.exception.AuthException;
+import com.shah_s.bakery_auth_service.exception.*;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.shah_s.bakery_auth_service.client.NotificationServiceClient;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -24,10 +27,13 @@ public class AuthService {
     final private UserService userService;
 
     final private JwtService jwtService;
+    
+    final private NotificationServiceClient notificationClient;
 
-    public AuthService(UserService userService, JwtService jwtService) {
+    public AuthService(UserService userService, JwtService jwtService, NotificationServiceClient notificationClient) {
         this.userService = userService;
         this.jwtService = jwtService;
+        this.notificationClient = notificationClient;
     }
 
     // User registration
@@ -44,6 +50,21 @@ public class AuthService {
             Long expiresIn = jwtService.getExpirationTime();
 
             logger.info("Registration successful for user: {}", user.getUsername());
+            
+            // Send welcome notification
+            try {
+                Map<String, Object> notificationReq = new HashMap<>();
+                notificationReq.put("type", "EMAIL");
+                notificationReq.put("recipientEmail", user.getEmail());
+                notificationReq.put("recipientName", user.getFirstName() + " " + user.getLastName());
+                notificationReq.put("title", "Welcome to Bakery");
+                notificationReq.put("content", "Thank you for registering with us, " + user.getFirstName() + "!");
+                notificationReq.put("source", "AUTH_SERVICE");
+                notificationReq.put("userId", user.getId());
+                notificationClient.sendNotification(notificationReq);
+            } catch (Exception ex) {
+                logger.error("Failed to send welcome notification: {}", ex.getMessage());
+            }
 
             return AuthResponse.of(accessToken, refreshToken, expiresIn, user);
 
@@ -60,7 +81,7 @@ public class AuthService {
         try {
             // Check if account is locked
             if (userService.isAccountLocked(request.getUsernameOrEmail())) {
-                throw new AuthException("Account is locked due to too many failed login attempts. Please try again later.");
+                throw new AccountLockedException("Account is locked due to too many failed login attempts. Please try again later.");
             }
 
             // Find user by username or email
@@ -69,21 +90,21 @@ public class AuthService {
             if (userOptional.isEmpty()) {
                 // Record failed attempt even for non-existent user (prevent user enumeration)
                 userService.recordFailedLogin(request.getUsernameOrEmail());
-                throw new AuthException("Invalid credentials");
+                throw new InvalidCredentialsException("Invalid credentials");
             }
 
             User user = userOptional.get();
 
             // Check if user is active
             if (!user.isActive()) {
-                throw new AuthException("Account is not active. Please contact support.");
+                throw new AccountLockedException("Account is not active. Please contact support.");
             }
 
             // Validate password
             if (!userService.validateCredentials(request.getUsernameOrEmail(), request.getPassword())) {
                 // Record failed login attempt
                 userService.recordFailedLogin(request.getUsernameOrEmail());
-                throw new AuthException("Invalid credentials");
+                throw new InvalidCredentialsException("Invalid credentials");
             }
 
             // Record successful login
@@ -114,17 +135,17 @@ public class AuthService {
         try {
             // Validate refresh token format
             if (!jwtService.validateToken(refreshToken)) {
-                throw new AuthException("Invalid refresh token");
+                throw new InvalidTokenException("Invalid refresh token");
             }
 
             // Check if it's actually a refresh token
             if (!jwtService.isRefreshToken(refreshToken)) {
-                throw new AuthException("Token is not a refresh token");
+                throw new InvalidTokenException("Token is not a refresh token");
             }
 
             // Check if refresh token is expired
             if (jwtService.isTokenExpired(refreshToken)) {
-                throw new AuthException("Refresh token is expired");
+                throw new TokenExpiredException("Refresh token is expired");
             }
 
             // Extract username from refresh token
@@ -133,14 +154,14 @@ public class AuthService {
             // Find user
             Optional<User> userOptional = userService.findByUsername(username);
             if (userOptional.isEmpty()) {
-                throw new AuthException("User not found");
+                throw new UserNotFoundException("User not found");
             }
 
             User user = userOptional.get();
 
             // Check if user is still active
             if (!user.isActive()) {
-                throw new AuthException("Account is not active");
+                throw new AccountLockedException("Account is not active");
             }
 
             // Generate new tokens
@@ -226,6 +247,25 @@ public class AuthService {
         try {
             userService.updatePassword(userId, currentPassword, newPassword);
             logger.info("Password change successful for user ID: {}", userId);
+            
+            // Send password change notification
+            try {
+                Optional<User> userOpt = userService.findById(userId);
+                if (userOpt.isPresent()) {
+                    User user = userOpt.get();
+                    Map<String, Object> notificationReq = new HashMap<>();
+                    notificationReq.put("type", "EMAIL");
+                    notificationReq.put("recipientEmail", user.getEmail());
+                    notificationReq.put("recipientName", user.getFirstName() + " " + user.getLastName());
+                    notificationReq.put("title", "Password Changed");
+                    notificationReq.put("content", "Your password has been successfully changed. If this wasn't you, please contact support immediately.");
+                    notificationReq.put("source", "AUTH_SERVICE");
+                    notificationReq.put("userId", user.getId());
+                    notificationClient.sendNotification(notificationReq);
+                }
+            } catch (Exception ex) {
+                logger.error("Failed to send password change notification: {}", ex.getMessage());
+            }
 
         } catch (Exception e) {
             logger.error("Password change failed for user ID: {} - {}", userId, e.getMessage());
