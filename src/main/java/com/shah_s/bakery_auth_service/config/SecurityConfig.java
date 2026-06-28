@@ -40,8 +40,8 @@ public class SecurityConfig {
                 // Disable CSRF for REST API
                 .csrf(AbstractHttpConfigurer::disable)
 
-                // Configure CORS
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                // Configure CORS (handled by API Gateway)
+                .cors(AbstractHttpConfigurer::disable)
 
                 // Session management - stateless for JWT
                 .sessionManagement(session ->
@@ -56,6 +56,7 @@ public class SecurityConfig {
                                 "/api/auth/refresh",
                                 "/api/auth/refresh-token",
                                 "/api/auth/health",
+                                "/api/users/internal/**",
                                 "/actuator/**",
                                 "/error"
                         ).permitAll()

@@ -6,6 +6,8 @@ import com.shah_s.bakery_auth_service.entity.User;
 import com.shah_s.bakery_auth_service.exception.AuthException;
 import com.shah_s.bakery_auth_service.service.JwtService;
 import com.shah_s.bakery_auth_service.service.UserService;
+import com.shah_s.bakery_auth_service.service.DashboardStatisticsService;
+import com.shah_s.bakery_auth_service.entity.DashboardStatistics;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -22,7 +24,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "*", maxAge = 3600)
+
 public class UserController {
 
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
@@ -32,6 +34,9 @@ public class UserController {
 
     @Autowired
     private JwtService jwtService;
+
+    @Autowired
+    private DashboardStatisticsService dashboardStatisticsService;
 
     // Get user profile
     @GetMapping("/profile")
@@ -230,6 +235,16 @@ public class UserController {
 
         logger.info("User statistics retrieved");
         return ResponseEntity.ok(statistics);
+    }
+
+    // Get central dashboard statistics (Admin only)
+    @GetMapping("/admin/dashboard-stats")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> getDashboardStats(
+            @RequestParam(defaultValue = "1m") String timeframe) {
+        logger.info("Get dashboard statistics request received (admin) for timeframe: {}", timeframe);
+        Map<String, Object> stats = dashboardStatisticsService.getStatisticsWithGrowth(timeframe);
+        return ResponseEntity.ok(stats);
     }
 
     // Utility methods

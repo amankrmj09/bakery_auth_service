@@ -23,9 +23,9 @@ public class UserService {
 
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
-    final private UserRepository userRepository;
-
-    final private PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final DashboardStatisticsService dashboardStatisticsService;
 
     @Value("${security.login.max-attempts:5}")
     private Integer maxLoginAttempts;
@@ -33,9 +33,11 @@ public class UserService {
     @Value("${security.login.lockout-duration:300000}") // 5 minutes default
     private Long lockoutDuration;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    @Autowired
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, DashboardStatisticsService dashboardStatisticsService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.dashboardStatisticsService = dashboardStatisticsService;
     }
 
     // Create new user
@@ -68,6 +70,9 @@ public class UserService {
 
         User savedUser = userRepository.save(user);
         logger.info("User created successfully with ID: {}", savedUser.getId());
+        
+        dashboardStatisticsService.incrementUsers();
+        
         return savedUser;
     }
 
@@ -254,10 +259,12 @@ public class UserService {
                 .orElseThrow(() -> new AuthException("User not found"));
 
         userRepository.delete(user);
+        dashboardStatisticsService.decrementUsers();
         logger.info("User deleted: {}", user.getUsername());
     }
 
     // Get user statistics
+    @org.springframework.cache.annotation.Cacheable(value = "user_statistics")
     public Map<String, Long> getUserStatistics() {
         Object[] stats = userRepository.getUserStatistics();
         Map<String, Long> statisticsMap = new HashMap<>();
@@ -265,6 +272,7 @@ public class UserService {
         if (stats.length > 0) {
             Object[] row = (Object[]) stats[0];
             statisticsMap.put("totalUsers", ((Number) row[0]).longValue());
+            statisticsMap.put("TOTAL_USERS", ((Number) row[0]).longValue()); // Added for frontend compatibility
             statisticsMap.put("activeUsers", ((Number) row[1]).longValue());
             statisticsMap.put("verifiedUsers", ((Number) row[2]).longValue());
             statisticsMap.put("adminUsers", ((Number) row[3]).longValue());
