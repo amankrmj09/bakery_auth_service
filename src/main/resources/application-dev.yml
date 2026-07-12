@@ -1,3 +1,22 @@
 spring:
   datasource:
     url: jdbc:postgresql://blubug.me:8001/bakery_auth
+    username: auth_user
+    password: auth_password
+  data:
+    redis:
+      host: blubug.me
+      port: 6379
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+jwt:
+  secret: bWVnYVN1cGVyU2VjcmV0S2V5Rm9yQmFrZXJ5QXV0aFNlcnZpY2UyMDI1
+app:
+  admin:
+    first-name: Super
+    last-name: Admin
+    email: admin@bakery.com
+    password: Admin@123
+    phone: 1234567890
