@@ -43,6 +43,8 @@ dependencies {
 	implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
 	implementation("org.springframework.cloud:spring-cloud-starter-config")
 	implementation("org.springframework.boot:spring-boot-starter-data-redis")
+	implementation("org.flywaydb:flyway-core")
+	implementation("org.flywaydb:flyway-database-postgresql")
 	compileOnly("org.projectlombok:lombok")
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
 	// runtimeOnly("io.micrometer:micrometer-registry-prometheus")
@@ -82,4 +84,3 @@ tasks.withType<Test> {
 // 	inputs.dir(project.extra["snippetsDir"]!!)
 // 	dependsOn(tasks.test)
 // }
-
