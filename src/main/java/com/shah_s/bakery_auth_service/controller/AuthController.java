@@ -1,8 +1,8 @@
 package com.shah_s.bakery_auth_service.controller;
 
-import com.shah_s.bakery_auth_service.dto.AuthResponse;
-import com.shah_s.bakery_auth_service.dto.LoginRequest;
-import com.shah_s.bakery_auth_service.dto.RegisterRequest;
+import com.shah_s.bakery_auth_service.dto.AuthResponseDto;
+import com.shah_s.bakery_auth_service.dto.LoginRequestDto;
+import com.shah_s.bakery_auth_service.dto.RegisterRequestDto;
 import com.shah_s.bakery_auth_service.exception.AuthException;
 import com.shah_s.bakery_auth_service.service.AuthService;
 import com.shah_s.bakery_auth_service.service.JwtService;
@@ -36,10 +36,10 @@ public class AuthController {
 
     // User Registration
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) throws AuthException {
+    public ResponseEntity<AuthResponseDto> register(@Valid @RequestBody RegisterRequestDto request) throws AuthException {
         logger.info("Registration request received for username: {}", request.getUsername());
 
-        AuthResponse response = authService.register(request);
+        AuthResponseDto response = authService.register(request);
 
         logger.info("Registration successful for username: {}", request.getUsername());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -47,10 +47,10 @@ public class AuthController {
 
     // User Login
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) throws AuthException {
+    public ResponseEntity<AuthResponseDto> login(@Valid @RequestBody LoginRequestDto request) throws AuthException {
         logger.info("Login request received for user: {}", request.getUsernameOrEmail());
 
-        AuthResponse response = authService.login(request);
+        AuthResponseDto response = authService.login(request);
 
         logger.info("Login successful for user: {}", request.getUsernameOrEmail());
         return ResponseEntity.ok(response);
@@ -58,7 +58,7 @@ public class AuthController {
 
     // Refresh Token
     @PostMapping("/refresh")
-    public ResponseEntity<AuthResponse> refreshToken(HttpServletRequest request) throws AuthException {
+    public ResponseEntity<AuthResponseDto> refreshToken(HttpServletRequest request) throws AuthException {
         logger.info("Token refresh request received");
 
         String authHeader = request.getHeader("Authorization");
@@ -69,7 +69,7 @@ public class AuthController {
             return ResponseEntity.badRequest().build();
         }
 
-        AuthResponse response = authService.refreshToken(refreshToken);
+        AuthResponseDto response = authService.refreshToken(refreshToken);
 
         logger.info("Token refresh successful");
         return ResponseEntity.ok(response);
@@ -77,7 +77,7 @@ public class AuthController {
 
     // Alternative refresh token endpoint (from request body)
     @PostMapping("/refresh-token")
-    public ResponseEntity<AuthResponse> refreshTokenFromBody(@RequestBody Map<String, String> request) throws AuthException {
+    public ResponseEntity<AuthResponseDto> refreshTokenFromBody(@RequestBody Map<String, String> request) throws AuthException {
         logger.info("Token refresh request received (from body)");
 
         String refreshToken = request.get("refreshToken");
@@ -86,7 +86,7 @@ public class AuthController {
             return ResponseEntity.badRequest().build();
         }
 
-        AuthResponse response = authService.refreshToken(refreshToken);
+        AuthResponseDto response = authService.refreshToken(refreshToken);
 
         logger.info("Token refresh successful (from body)");
         return ResponseEntity.ok(response);

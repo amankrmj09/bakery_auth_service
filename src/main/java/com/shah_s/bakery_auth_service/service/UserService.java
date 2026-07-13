@@ -1,7 +1,7 @@
 package com.shah_s.bakery_auth_service.service;
 
-import com.shah_s.bakery_auth_service.dto.RegisterRequest;
-import com.shah_s.bakery_auth_service.dto.UserResponse;
+import com.shah_s.bakery_auth_service.dto.RegisterRequestDto;
+import com.shah_s.bakery_auth_service.dto.UserResponseDto;
 import com.shah_s.bakery_auth_service.entity.User;
 import com.shah_s.bakery_auth_service.exception.AuthException;
 import com.shah_s.bakery_auth_service.repository.UserRepository;
@@ -41,7 +41,7 @@ public class UserService {
     }
 
     // Create new user
-    public User createUser(RegisterRequest request) throws AuthException {
+    public User createUser(RegisterRequestDto request) throws AuthException {
         logger.info("Creating new user with username: {}", request.getUsername());
 
         // Check if username already exists
@@ -92,14 +92,14 @@ public class UserService {
     }
 
     // Get user profile
-    public UserResponse getUserProfile(UUID userId) throws AuthException {
+    public UserResponseDto getUserProfile(UUID userId) throws AuthException {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AuthException("User not found"));
-        return UserResponse.from(user);
+        return UserResponseDto.from(user);
     }
 
     // Update user profile
-    public UserResponse updateUserProfile(UUID userId, RegisterRequest request) throws AuthException {
+    public UserResponseDto updateUserProfile(UUID userId, RegisterRequestDto request) throws AuthException {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AuthException("User not found"));
 
@@ -130,7 +130,7 @@ public class UserService {
 
         User updatedUser = userRepository.save(user);
         logger.info("User profile updated for ID: {}", userId);
-        return UserResponse.from(updatedUser);
+        return UserResponseDto.from(updatedUser);
     }
 
     // Update user password
@@ -203,23 +203,23 @@ public class UserService {
     }
 
     // Get all users (admin function)
-    public List<UserResponse> getAllUsers() {
+    public List<UserResponseDto> getAllUsers() {
         return userRepository.findAll().stream()
-                .map(UserResponse::from)
+                .map(UserResponseDto::from)
                 .collect(Collectors.toList());
     }
 
     // Search users
-    public List<UserResponse> searchUsers(String searchTerm) {
+    public List<UserResponseDto> searchUsers(String searchTerm) {
         return userRepository.searchUsers(searchTerm).stream()
-                .map(UserResponse::from)
+                .map(UserResponseDto::from)
                 .collect(Collectors.toList());
     }
 
     // Get users by role
-    public List<UserResponse> getUsersByRole(User.Role role) {
+    public List<UserResponseDto> getUsersByRole(User.Role role) {
         return userRepository.findByRole(role).stream()
-                .map(UserResponse::from)
+                .map(UserResponseDto::from)
                 .collect(Collectors.toList());
     }
 

@@ -1,7 +1,7 @@
 package com.shah_s.bakery_auth_service.controller;
 
-import com.shah_s.bakery_auth_service.dto.RegisterRequest;
-import com.shah_s.bakery_auth_service.dto.UserResponse;
+import com.shah_s.bakery_auth_service.dto.RegisterRequestDto;
+import com.shah_s.bakery_auth_service.dto.UserResponseDto;
 import com.shah_s.bakery_auth_service.entity.User;
 import com.shah_s.bakery_auth_service.exception.AuthException;
 import com.shah_s.bakery_auth_service.service.JwtService;
@@ -40,7 +40,7 @@ public class UserController {
 
     // Get user profile
     @GetMapping("/profile")
-    public ResponseEntity<UserResponse> getUserProfile(HttpServletRequest request) throws AuthException {
+    public ResponseEntity<UserResponseDto> getUserProfile(HttpServletRequest request) throws AuthException {
         logger.info("Get user profile request received");
 
         UUID userId = extractUserIdFromToken(request);
@@ -48,7 +48,7 @@ public class UserController {
             return ResponseEntity.badRequest().build();
         }
 
-        UserResponse userResponse = userService.getUserProfile(userId);
+        UserResponseDto userResponse = userService.getUserProfile(userId);
 
         logger.info("User profile retrieved for user ID: {}", userId);
         return ResponseEntity.ok(userResponse);
@@ -56,8 +56,8 @@ public class UserController {
 
     // Update user profile
     @PutMapping("/profile")
-    public ResponseEntity<UserResponse> updateUserProfile(
-            @Valid @RequestBody RegisterRequest request,
+    public ResponseEntity<UserResponseDto> updateUserProfile(
+            @Valid @RequestBody RegisterRequestDto request,
             HttpServletRequest httpRequest) throws AuthException {
 
         logger.info("Update user profile request received");
@@ -67,7 +67,7 @@ public class UserController {
             return ResponseEntity.badRequest().build();
         }
 
-        UserResponse userResponse = userService.updateUserProfile(userId, request);
+        UserResponseDto userResponse = userService.updateUserProfile(userId, request);
 
         logger.info("User profile updated for user ID: {}", userId);
         return ResponseEntity.ok(userResponse);
@@ -75,7 +75,7 @@ public class UserController {
 
     // Get user by ID (Admin or self only)
     @GetMapping("/{userId}")
-    public ResponseEntity<UserResponse> getUserById(
+    public ResponseEntity<UserResponseDto> getUserById(
             @PathVariable UUID userId,
             HttpServletRequest request) throws AuthException {
 
@@ -89,7 +89,7 @@ public class UserController {
             return ResponseEntity.status(403).build(); // Forbidden
         }
 
-        UserResponse userResponse = userService.getUserProfile(userId);
+        UserResponseDto userResponse = userService.getUserProfile(userId);
 
         logger.info("User retrieved for user ID: {}", userId);
         return ResponseEntity.ok(userResponse);
@@ -98,10 +98,10 @@ public class UserController {
     // Admin endpoints
     @GetMapping("/admin/all")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<UserResponse>> getAllUsers() {
+    public ResponseEntity<List<UserResponseDto>> getAllUsers() {
         logger.info("Get all users request received (admin)");
 
-        List<UserResponse> users = userService.getAllUsers();
+        List<UserResponseDto> users = userService.getAllUsers();
 
         logger.info("All users retrieved, count: {}", users.size());
         return ResponseEntity.ok(users);
@@ -110,10 +110,10 @@ public class UserController {
     // Search users (Admin only)
     @GetMapping("/admin/search")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<UserResponse>> searchUsers(@RequestParam String query) {
+    public ResponseEntity<List<UserResponseDto>> searchUsers(@RequestParam String query) {
         logger.info("Search users request received (admin) with query: {}", query);
 
-        List<UserResponse> users = userService.searchUsers(query);
+        List<UserResponseDto> users = userService.searchUsers(query);
 
         logger.info("User search completed, results: {}", users.size());
         return ResponseEntity.ok(users);
@@ -122,12 +122,12 @@ public class UserController {
     // Get users by role (Admin only)
     @GetMapping("/admin/role/{role}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<UserResponse>> getUsersByRole(@PathVariable String role) {
+    public ResponseEntity<List<UserResponseDto>> getUsersByRole(@PathVariable String role) {
         logger.info("Get users by role request received (admin) for role: {}", role);
 
         try {
             User.Role userRole = User.Role.valueOf(role.toUpperCase());
-            List<UserResponse> users = userService.getUsersByRole(userRole);
+            List<UserResponseDto> users = userService.getUsersByRole(userRole);
 
             logger.info("Users by role retrieved, count: {}", users.size());
             return ResponseEntity.ok(users);

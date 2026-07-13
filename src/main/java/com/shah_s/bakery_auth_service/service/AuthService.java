@@ -1,8 +1,8 @@
 package com.shah_s.bakery_auth_service.service;
 
-import com.shah_s.bakery_auth_service.dto.AuthResponse;
-import com.shah_s.bakery_auth_service.dto.LoginRequest;
-import com.shah_s.bakery_auth_service.dto.RegisterRequest;
+import com.shah_s.bakery_auth_service.dto.AuthResponseDto;
+import com.shah_s.bakery_auth_service.dto.LoginRequestDto;
+import com.shah_s.bakery_auth_service.dto.RegisterRequestDto;
 import com.shah_s.bakery_auth_service.entity.User;
 import com.shah_s.bakery_auth_service.exception.*;
 import lombok.Getter;
@@ -11,7 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.shah_s.bakery_auth_service.client.NotificationServiceClient;
+import org.devofblue.common.event.UserEvent;
+import org.springframework.kafka.core.KafkaTemplate;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,16 +29,16 @@ public class AuthService {
 
     final private JwtService jwtService;
     
-    final private NotificationServiceClient notificationClient;
+    final private KafkaTemplate<String, Object> kafkaTemplate;
 
-    public AuthService(UserService userService, JwtService jwtService, NotificationServiceClient notificationClient) {
+    public AuthService(UserService userService, JwtService jwtService, KafkaTemplate<String, Object> kafkaTemplate) {
         this.userService = userService;
         this.jwtService = jwtService;
-        this.notificationClient = notificationClient;
+        this.kafkaTemplate = kafkaTemplate;
     }
 
     // User registration
-    public AuthResponse register(RegisterRequest request) throws AuthException {
+    public AuthResponseDto register(RegisterRequestDto request) throws AuthException {
         logger.info("Processing registration for username: {}", request.getUsername());
 
         try {
@@ -51,22 +52,23 @@ public class AuthService {
 
             logger.info("Registration successful for user: {}", user.getUsername());
             
-            // Send welcome notification
+            // Send welcome notification via Kafka
             try {
-                Map<String, Object> notificationReq = new HashMap<>();
-                notificationReq.put("type", "EMAIL");
-                notificationReq.put("recipientEmail", user.getEmail());
-                notificationReq.put("recipientName", user.getFirstName() + " " + user.getLastName());
-                notificationReq.put("title", "Welcome to Bakery");
-                notificationReq.put("content", "Thank you for registering with us, " + user.getFirstName() + "!");
-                notificationReq.put("source", "AUTH_SERVICE");
-                notificationReq.put("userId", user.getId());
-                notificationClient.sendNotification(notificationReq);
+                UserEvent event = UserEvent.builder()
+                        .userId(user.getId())
+                        .email(user.getEmail())
+                        .firstName(user.getFirstName())
+                        .lastName(user.getLastName())
+                        .action("REGISTERED")
+                        .timestamp(java.time.LocalDateTime.now())
+                        .build();
+                kafkaTemplate.send("user-events", user.getId().toString(), event);
+                logger.info("Published UserEvent for registered user: {}", user.getId());
             } catch (Exception ex) {
-                logger.error("Failed to send welcome notification: {}", ex.getMessage());
+                logger.error("Failed to publish UserEvent: {}", ex.getMessage());
             }
 
-            return AuthResponse.of(accessToken, refreshToken, expiresIn, user);
+            return AuthResponseDto.of(accessToken, refreshToken, expiresIn, user);
 
         } catch (Exception e) {
             logger.error("Registration failed for username: {} - {}", request.getUsername(), e.getMessage());
@@ -75,7 +77,7 @@ public class AuthService {
     }
 
     // User login
-    public AuthResponse login(LoginRequest request) throws AuthException {
+    public AuthResponseDto login(LoginRequestDto request) throws AuthException {
         logger.info("Processing login for user: {}", request.getUsernameOrEmail());
 
         try {
@@ -117,7 +119,7 @@ public class AuthService {
 
             logger.info("Login successful for user: {}", user.getUsername());
 
-            return AuthResponse.of(accessToken, refreshToken, expiresIn, user);
+            return AuthResponseDto.of(accessToken, refreshToken, expiresIn, user);
 
         } catch (AuthException e) {
             logger.warn("Login failed for user: {} - {}", request.getUsernameOrEmail(), e.getMessage());
@@ -129,7 +131,7 @@ public class AuthService {
     }
 
     // Refresh token
-    public AuthResponse refreshToken(String refreshToken) throws AuthException {
+    public AuthResponseDto refreshToken(String refreshToken) throws AuthException {
         logger.info("Processing token refresh");
 
         try {
@@ -171,7 +173,7 @@ public class AuthService {
 
             logger.info("Token refresh successful for user: {}", user.getUsername());
 
-            return AuthResponse.of(newAccessToken, newRefreshToken, expiresIn, user);
+            return AuthResponseDto.of(newAccessToken, newRefreshToken, expiresIn, user);
 
         } catch (AuthException e) {
             logger.warn("Token refresh failed: {}", e.getMessage());
@@ -256,12 +258,16 @@ public class AuthService {
                     Map<String, Object> notificationReq = new HashMap<>();
                     notificationReq.put("type", "EMAIL");
                     notificationReq.put("recipientEmail", user.getEmail());
-                    notificationReq.put("recipientName", user.getFirstName() + " " + user.getLastName());
-                    notificationReq.put("title", "Password Changed");
-                    notificationReq.put("content", "Your password has been successfully changed. If this wasn't you, please contact support immediately.");
-                    notificationReq.put("source", "AUTH_SERVICE");
-                    notificationReq.put("userId", user.getId());
-                    notificationClient.sendNotification(notificationReq);
+                    UserEvent event = UserEvent.builder()
+                            .userId(user.getId())
+                            .email(user.getEmail())
+                            .firstName(user.getFirstName())
+                            .lastName(user.getLastName())
+                            .action("PASSWORD_CHANGED")
+                            .timestamp(java.time.LocalDateTime.now())
+                            .build();
+                    kafkaTemplate.send("user-events", user.getId().toString(), event);
+                    logger.info("Published UserEvent for password change: {}", user.getId());
                 }
             } catch (Exception ex) {
                 logger.error("Failed to send password change notification: {}", ex.getMessage());

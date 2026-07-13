@@ -8,7 +8,7 @@ import lombok.Setter;
 
 @Setter
 @Getter
-public class LoginRequest {
+public class LoginRequestDto {
 
     // Getters and Setters
     @NotBlank(message = "Username or email is required")
@@ -18,9 +18,9 @@ public class LoginRequest {
     private String password;
 
     // Constructors
-    public LoginRequest() {}
+    public LoginRequestDto() {}
 
-    public LoginRequest(String usernameOrEmail, String password) {
+    public LoginRequestDto(String usernameOrEmail, String password) {
         this.usernameOrEmail = usernameOrEmail;
         this.password = password;
     }

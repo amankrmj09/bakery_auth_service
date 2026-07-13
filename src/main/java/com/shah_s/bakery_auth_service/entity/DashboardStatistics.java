@@ -16,7 +16,7 @@ import java.util.UUID;
 @ToString
 @RequiredArgsConstructor
 @Builder
-@NoArgsConstructor
+
 @AllArgsConstructor
 @Entity
 @Table(name = "dashboard_statistics")

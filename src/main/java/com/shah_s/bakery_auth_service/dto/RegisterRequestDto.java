@@ -8,7 +8,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class RegisterRequest {
+public class RegisterRequestDto {
 
     // Getters and Setters
     @NotBlank(message = "Username is required")
@@ -35,9 +35,9 @@ public class RegisterRequest {
     private String address;
 
     // Constructors
-    public RegisterRequest() {}
+    public RegisterRequestDto() {}
 
-    public RegisterRequest(String username, String email, String password, String firstName, String lastName) {
+    public RegisterRequestDto(String username, String email, String password, String firstName, String lastName) {
         this.username = username;
         this.email = email;
         this.password = password;

@@ -9,7 +9,7 @@ import java.util.UUID;
 
 @Setter
 @Getter
-public class UserResponse {
+public class UserResponseDto {
 
     // Getters and Setters
     private UUID id;
@@ -26,11 +26,11 @@ public class UserResponse {
     private LocalDateTime createdAt;
 
     // Constructors
-    public UserResponse() {}
+    public UserResponseDto() {}
 
     // Static factory method
-    public static UserResponse from(User user) {
-        UserResponse response = new UserResponse();
+    public static UserResponseDto from(User user) {
+        UserResponseDto response = new UserResponseDto();
         response.id = user.getId();
         response.username = user.getUsername();
         response.email = user.getEmail();

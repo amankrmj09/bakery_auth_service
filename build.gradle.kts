@@ -5,9 +5,7 @@ plugins {
 	// id("org.asciidoctor.jvm.convert") version "4.0.3"
 }
 
-group = "com.dev_of_blue"
-version = "1.0.0"
-description = "bakery_auth_service for auth management"
+description = "Authentication and Authorization Service for Bakery"
 
 java {
 	toolchain {
@@ -40,7 +38,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
-	implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
+	implementation("org.springframework.kafka:spring-kafka")
 	implementation("org.springframework.cloud:spring-cloud-starter-config")
 	implementation("org.springframework.boot:spring-boot-starter-data-redis")
 	implementation("org.flywaydb:flyway-core")
