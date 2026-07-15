@@ -28,5 +28,5 @@ eureka:
 # Test logging
 logging:
   level:
-    com.shah_s.bakery_auth_service: DEBUG
+    com.blubugtech.bakery_auth_service: DEBUG
     root: WARN

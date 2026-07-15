@@ -23,7 +23,7 @@ server:
 # Logging for Docker
 logging:
   level:
-    com.shah_s.bakery_auth_service: INFO
+    com.blubugtech.bakery_auth_service: INFO
     org.springframework.security: WARN
     org.hibernate.SQL: WARN
     root: INFO
