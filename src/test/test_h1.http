@@ -1,0 +1,138 @@
+@baseUrl = http://bakery-api.blubug.me
+@adminEmail = admin@bakery.com
+@adminPassword = Admin@123
+
+### 1. Health Check (Type: Public)[cite: 4]
+# @name healthCheck
+GET {{baseUrl}}/api/auth/health
+Accept: application/json
+
+> {%
+    client.test("Health check returns UP", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+        client.assert(response.body.status === "UP", "Service is not UP");
+    });
+%}
+
+### 2. Admin Login (Type: Public)[cite: 4]
+# @name loginAdmin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "usernameOrEmail": "{{adminEmail}}",
+  "password": "{{adminPassword}}"
+}
+
+> {%
+    client.test("Admin Login successful", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+        client.assert(response.body.hasOwnProperty("access_token"), "No access token found");
+    });
+    client.global.set("auth_token", response.body.access_token);
+%}
+
+### 3. Get Store Settings (Type: Public)[cite: 4]
+# @name getStoreSettings
+GET {{baseUrl}}/api/store/settings/
+Accept: application/json
+
+> {%
+    client.test("Get Store Settings returns OK", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+        client.assert(response.body.hasOwnProperty("isAcceptingOrders"), "Missing store settings data");
+    });
+%}
+
+### 4. Update Store Settings (Type: Admin)[cite: 4]
+# @name updateStoreSettings
+PUT {{baseUrl}}/api/store/settings/
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "isAcceptingOrders": false
+}
+
+> {%
+    client.test("Update Store Settings successful", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+%}
+
+### 5. Get Current User Info (Type: User)[cite: 4]
+# @name getCurrentUser
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer {{auth_token}}
+Accept: application/json
+
+> {%
+    client.test("Get Current User Info successful", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+        client.assert(response.body.hasOwnProperty("userId"), "Missing userId in response");
+    });
+%}
+
+### 6. Get User Profile (Type: User)[cite: 4]
+# @name getUserProfile
+GET {{baseUrl}}/api/users/profile
+Authorization: Bearer {{auth_token}}
+Accept: application/json
+
+> {%
+    client.test("Get Profile returns OK", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+        client.assert(response.body.hasOwnProperty("email"), "Email missing in profile response");
+    });
+%}
+
+### 7. Get All Users (Type: Admin)[cite: 4]
+# @name getAllUsers
+GET {{baseUrl}}/api/users/admin/all
+Authorization: Bearer {{auth_token}}
+Accept: application/json
+
+> {%
+    client.test("Get All Users successful", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+        client.assert(Array.isArray(response.body), "Response should be an array of users");
+    });
+%}
+
+### 8. Get User Statistics (Type: Admin)[cite: 4]
+# @name getUserStatistics
+GET {{baseUrl}}/api/users/admin/statistics
+Authorization: Bearer {{auth_token}}
+Accept: application/json
+
+> {%
+    client.test("Get User Statistics successful", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+        client.assert(response.body.hasOwnProperty("totalUsers"), "Missing totalUsers metric");
+    });
+%}
+
+### 9. Get Dashboard Statistics (Type: Admin)[cite: 4]
+# @name getDashboardStatistics
+GET {{baseUrl}}/api/users/admin/dashboard-stats?timeframe=monthly
+Authorization: Bearer {{auth_token}}
+Accept: application/json
+
+> {%
+    client.test("Get Dashboard Statistics successful", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+        client.assert(response.body.hasOwnProperty("revenue"), "Missing revenue metric");
+    });
+%}
+
+### 10. Logout (Type: User)[cite: 4]
+# @name logout
+POST {{baseUrl}}/api/auth/logout
+Authorization: Bearer {{auth_token}}
+Accept: application/json
+
+> {%
+    client.test("Logout successful", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+%}
