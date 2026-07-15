@@ -4,21 +4,13 @@ This document provides a comprehensive reference for the API endpoints exposed b
 
 ---
 
-## Table of Contents
-
-1. [Auth Controller](#auth-controller)
-2. [Internal Statistics Controller](#internal-statistics-controller)
-3. [Store Settings Controller](#store-settings-controller)
-4. [User Controller](#user-controller)
-
----
-
 ## Auth Controller
 **Base Path:** `/api/auth`
 
 ### 1. User Registration
 - **Method:** `POST`
-- **Path:** `/register`
+- **Path:** `/api/auth/register`
+- **Type of API:** `Public`
 - **Request Body:**
   ```json
   {
@@ -31,7 +23,7 @@ This document provides a comprehensive reference for the API endpoints exposed b
     "address": "string"        // Optional
   }
   ```
-- **Response:** `201 Created`
+- **Response Body:** `201 Created`
   ```json
   {
     "access_token": "string",
@@ -53,7 +45,8 @@ This document provides a comprehensive reference for the API endpoints exposed b
 
 ### 2. User Login
 - **Method:** `POST`
-- **Path:** `/login`
+- **Path:** `/api/auth/login`
+- **Type of API:** `Public`
 - **Request Body:**
   ```json
   {
@@ -61,33 +54,36 @@ This document provides a comprehensive reference for the API endpoints exposed b
     "password": "string"         // Required
   }
   ```
-- **Response:** `200 OK`
+- **Response Body:** `200 OK`
   *(Same as Registration Response)*
 
 ### 3. Refresh Token (Header)
 - **Method:** `POST`
-- **Path:** `/refresh`
-- **Headers:** `Authorization: Bearer <refresh_token>`
-- **Response:** `200 OK`
+- **Path:** `/api/auth/refresh`
+- **Type of API:** `User`
+- **Request Body:** None
+- **Response Body:** `200 OK`
   *(Same as Registration Response)*
 
 ### 4. Refresh Token (Body)
 - **Method:** `POST`
-- **Path:** `/refresh-token`
+- **Path:** `/api/auth/refresh-token`
+- **Type of API:** `Public`
 - **Request Body:**
   ```json
   {
     "refreshToken": "string"
   }
   ```
-- **Response:** `200 OK`
+- **Response Body:** `200 OK`
   *(Same as Registration Response)*
 
 ### 5. Validate Token (Header)
 - **Method:** `POST`
-- **Path:** `/validate`
-- **Headers:** `Authorization: Bearer <access_token>`
-- **Response:** `200 OK`
+- **Path:** `/api/auth/validate`
+- **Type of API:** `User`
+- **Request Body:** None
+- **Response Body:** `200 OK`
   ```json
   {
     "valid": true,
@@ -101,21 +97,23 @@ This document provides a comprehensive reference for the API endpoints exposed b
 
 ### 6. Validate Token (Body)
 - **Method:** `POST`
-- **Path:** `/validate-token`
+- **Path:** `/api/auth/validate-token`
+- **Type of API:** `Public`
 - **Request Body:**
   ```json
   {
     "token": "string"
   }
   ```
-- **Response:** `200 OK`
+- **Response Body:** `200 OK`
   *(Same as Validate Token Header Response)*
 
 ### 7. Logout
 - **Method:** `POST`
-- **Path:** `/logout`
-- **Headers:** `Authorization: Bearer <access_token>`
-- **Response:** `200 OK`
+- **Path:** `/api/auth/logout`
+- **Type of API:** `User`
+- **Request Body:** None
+- **Response Body:** `200 OK`
   ```json
   {
     "message": "Logout successful"
@@ -124,8 +122,8 @@ This document provides a comprehensive reference for the API endpoints exposed b
 
 ### 8. Change Password
 - **Method:** `POST`
-- **Path:** `/change-password`
-- **Headers:** `Authorization: Bearer <access_token>`
+- **Path:** `/api/auth/change-password`
+- **Type of API:** `User`
 - **Request Body:**
   ```json
   {
@@ -133,7 +131,7 @@ This document provides a comprehensive reference for the API endpoints exposed b
     "newPassword": "string"
   }
   ```
-- **Response:** `200 OK`
+- **Response Body:** `200 OK`
   ```json
   {
     "message": "Password changed successfully"
@@ -142,8 +140,10 @@ This document provides a comprehensive reference for the API endpoints exposed b
 
 ### 9. Verify Email
 - **Method:** `POST`
-- **Path:** `/verify-email/{userId}`
-- **Response:** `200 OK`
+- **Path:** `/api/auth/verify-email/{userId}`
+- **Type of API:** `Public`
+- **Request Body:** None
+- **Response Body:** `200 OK`
   ```json
   {
     "message": "Email verified successfully"
@@ -152,8 +152,10 @@ This document provides a comprehensive reference for the API endpoints exposed b
 
 ### 10. Health Check
 - **Method:** `GET`
-- **Path:** `/health`
-- **Response:** `200 OK`
+- **Path:** `/api/auth/health`
+- **Type of API:** `Public`
+- **Request Body:** None
+- **Response Body:** `200 OK`
   ```json
   {
     "status": "UP",
@@ -164,9 +166,10 @@ This document provides a comprehensive reference for the API endpoints exposed b
 
 ### 11. Get Current User Info
 - **Method:** `GET`
-- **Path:** `/me`
-- **Headers:** `Authorization: Bearer <access_token>`
-- **Response:** `200 OK`
+- **Path:** `/api/auth/me`
+- **Type of API:** `User`
+- **Request Body:** None
+- **Response Body:** `200 OK`
   ```json
   {
     "userId": "UUID",
@@ -183,27 +186,29 @@ This document provides a comprehensive reference for the API endpoints exposed b
 
 ### 1. Increment Orders
 - **Method:** `POST`
-- **Path:** `/increment-orders`
-- **Headers:** `X-User-Role: SYSTEM`
-- **Response:** `200 OK`
+- **Path:** `/api/users/internal/stats/increment-orders`
+- **Type of API:** `Admin`
+- **Request Body:** None
+- **Response Body:** `200 OK`
 
 ### 2. Decrement Orders
 - **Method:** `POST`
-- **Path:** `/decrement-orders`
-- **Headers:** `X-User-Role: SYSTEM`
-- **Response:** `200 OK`
+- **Path:** `/api/users/internal/stats/decrement-orders`
+- **Type of API:** `Admin`
+- **Request Body:** None
+- **Response Body:** `200 OK`
 
 ### 3. Add Revenue
 - **Method:** `POST`
-- **Path:** `/add-revenue`
-- **Headers:** `X-User-Role: SYSTEM`
+- **Path:** `/api/users/internal/stats/add-revenue`
+- **Type of API:** `Admin`
 - **Request Body:**
   ```json
   {
     "amount": 100.50
   }
   ```
-- **Response:** `200 OK`
+- **Response Body:** `200 OK`
 
 ---
 
@@ -212,8 +217,10 @@ This document provides a comprehensive reference for the API endpoints exposed b
 
 ### 1. Get Store Settings
 - **Method:** `GET`
-- **Path:** `/`
-- **Response:** `200 OK`
+- **Path:** `/api/store/settings/`
+- **Type of API:** `Public`
+- **Request Body:** None
+- **Response Body:** `200 OK`
   ```json
   {
     "id": "UUID",
@@ -225,15 +232,15 @@ This document provides a comprehensive reference for the API endpoints exposed b
 
 ### 2. Update Store Settings
 - **Method:** `PUT`
-- **Path:** `/`
-- **Headers:** `Authorization: Bearer <access_token>` (Admin Role Required)
+- **Path:** `/api/store/settings/`
+- **Type of API:** `Admin`
 - **Request Body:**
   ```json
   {
     "isAcceptingOrders": false
   }
   ```
-- **Response:** `200 OK`
+- **Response Body:** `200 OK`
   *(Same as Get Store Settings Response)*
 
 ---
@@ -243,9 +250,10 @@ This document provides a comprehensive reference for the API endpoints exposed b
 
 ### 1. Get User Profile
 - **Method:** `GET`
-- **Path:** `/profile`
-- **Headers:** `Authorization: Bearer <access_token>`
-- **Response:** `200 OK`
+- **Path:** `/api/users/profile`
+- **Type of API:** `User`
+- **Request Body:** None
+- **Response Body:** `200 OK`
   ```json
   {
     "id": "UUID",
@@ -265,25 +273,27 @@ This document provides a comprehensive reference for the API endpoints exposed b
 
 ### 2. Update User Profile
 - **Method:** `PUT`
-- **Path:** `/profile`
-- **Headers:** `Authorization: Bearer <access_token>`
+- **Path:** `/api/users/profile`
+- **Type of API:** `User`
 - **Request Body:**
   *(Same as Registration Request Body)*
-- **Response:** `200 OK`
+- **Response Body:** `200 OK`
   *(Same as Get User Profile Response)*
 
 ### 3. Get User By ID
 - **Method:** `GET`
-- **Path:** `/{userId}`
-- **Headers:** `Authorization: Bearer <access_token>` (Self or Admin)
-- **Response:** `200 OK`
+- **Path:** `/api/users/{userId}`
+- **Type of API:** `User`
+- **Request Body:** None
+- **Response Body:** `200 OK`
   *(Same as Get User Profile Response)*
 
 ### 4. Get All Users (Admin)
 - **Method:** `GET`
-- **Path:** `/admin/all`
-- **Headers:** `Authorization: Bearer <access_token>` (Admin Role Required)
-- **Response:** `200 OK`
+- **Path:** `/api/users/admin/all`
+- **Type of API:** `Admin`
+- **Request Body:** None
+- **Response Body:** `200 OK`
   ```json
   [
     {
@@ -296,29 +306,31 @@ This document provides a comprehensive reference for the API endpoints exposed b
 
 ### 5. Search Users (Admin)
 - **Method:** `GET`
-- **Path:** `/admin/search?query={string}`
-- **Headers:** `Authorization: Bearer <access_token>` (Admin Role Required)
-- **Response:** `200 OK`
+- **Path:** `/api/users/admin/search?query={string}`
+- **Type of API:** `Admin`
+- **Request Body:** None
+- **Response Body:** `200 OK`
   *(Array of User Profile objects)*
 
 ### 6. Get Users By Role (Admin)
 - **Method:** `GET`
-- **Path:** `/admin/role/{role}`
-- **Headers:** `Authorization: Bearer <access_token>` (Admin Role Required)
-- **Response:** `200 OK`
+- **Path:** `/api/users/admin/role/{role}`
+- **Type of API:** `Admin`
+- **Request Body:** None
+- **Response Body:** `200 OK`
   *(Array of User Profile objects)*
 
 ### 7. Update User Role (Admin)
 - **Method:** `PUT`
-- **Path:** `/admin/{userId}/role`
-- **Headers:** `Authorization: Bearer <access_token>` (Admin Role Required)
+- **Path:** `/api/users/admin/{userId}/role`
+- **Type of API:** `Admin`
 - **Request Body:**
   ```json
   {
     "role": "ADMIN"
   }
   ```
-- **Response:** `200 OK`
+- **Response Body:** `200 OK`
   ```json
   {
     "message": "User role updated successfully"
@@ -327,15 +339,15 @@ This document provides a comprehensive reference for the API endpoints exposed b
 
 ### 8. Update User Status (Admin)
 - **Method:** `PUT`
-- **Path:** `/admin/{userId}/status`
-- **Headers:** `Authorization: Bearer <access_token>` (Admin Role Required)
+- **Path:** `/api/users/admin/{userId}/status`
+- **Type of API:** `Admin`
 - **Request Body:**
   ```json
   {
     "status": "ACTIVE"
   }
   ```
-- **Response:** `200 OK`
+- **Response Body:** `200 OK`
   ```json
   {
     "message": "User status updated successfully"
@@ -344,9 +356,10 @@ This document provides a comprehensive reference for the API endpoints exposed b
 
 ### 9. Unlock User Account (Admin)
 - **Method:** `POST`
-- **Path:** `/admin/{userId}/unlock`
-- **Headers:** `Authorization: Bearer <access_token>` (Admin Role Required)
-- **Response:** `200 OK`
+- **Path:** `/api/users/admin/{userId}/unlock`
+- **Type of API:** `Admin`
+- **Request Body:** None
+- **Response Body:** `200 OK`
   ```json
   {
     "message": "User account unlocked successfully"
@@ -355,9 +368,10 @@ This document provides a comprehensive reference for the API endpoints exposed b
 
 ### 10. Delete User (Admin)
 - **Method:** `DELETE`
-- **Path:** `/admin/{userId}`
-- **Headers:** `Authorization: Bearer <access_token>` (Admin Role Required)
-- **Response:** `200 OK`
+- **Path:** `/api/users/admin/{userId}`
+- **Type of API:** `Admin`
+- **Request Body:** None
+- **Response Body:** `200 OK`
   ```json
   {
     "message": "User deleted successfully"
@@ -366,9 +380,10 @@ This document provides a comprehensive reference for the API endpoints exposed b
 
 ### 11. Get User Statistics (Admin)
 - **Method:** `GET`
-- **Path:** `/admin/statistics`
-- **Headers:** `Authorization: Bearer <access_token>` (Admin Role Required)
-- **Response:** `200 OK`
+- **Path:** `/api/users/admin/statistics`
+- **Type of API:** `Admin`
+- **Request Body:** None
+- **Response Body:** `200 OK`
   ```json
   {
     "totalUsers": 100,
@@ -380,9 +395,10 @@ This document provides a comprehensive reference for the API endpoints exposed b
 
 ### 12. Get Dashboard Statistics (Admin)
 - **Method:** `GET`
-- **Path:** `/admin/dashboard-stats?timeframe={string}`
-- **Headers:** `Authorization: Bearer <access_token>` (Admin Role Required)
-- **Response:** `200 OK`
+- **Path:** `/api/users/admin/dashboard-stats?timeframe={string}`
+- **Type of API:** `Admin`
+- **Request Body:** None
+- **Response Body:** `200 OK`
   ```json
   {
     "revenue": 5000.0,
