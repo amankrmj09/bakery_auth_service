@@ -48,21 +48,16 @@ public class InternalStatisticsController {
         if (!isSystemAuthorized(userRole)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        try {
-            Object amountObj = payload.get("amount");
-            BigDecimal amount;
-            if (amountObj instanceof Number) {
-                amount = new BigDecimal(amountObj.toString());
-            } else if (amountObj instanceof String) {
-                amount = new BigDecimal((String) amountObj);
-            } else {
-                return ResponseEntity.badRequest().build();
-            }
-            statisticsService.addRevenue(amount);
-            return ResponseEntity.ok().build();
-        } catch (Exception e) {
-            logger.error("Failed to parse revenue amount", e);
-            return ResponseEntity.badRequest().build();
+        Object amountObj = payload.get("amount");
+        BigDecimal amount;
+        if (amountObj instanceof Number) {
+            amount = new BigDecimal(amountObj.toString());
+        } else if (amountObj instanceof String) {
+            amount = new BigDecimal((String) amountObj);
+        } else {
+            throw new IllegalArgumentException("Invalid amount format");
         }
+        statisticsService.addRevenue(amount);
+        return ResponseEntity.ok().build();
     }
 }

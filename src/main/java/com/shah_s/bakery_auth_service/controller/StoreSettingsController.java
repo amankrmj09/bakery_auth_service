@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/store/settings")
+@RequestMapping({"/api/store/settings", "/api/store/settings/"})
 public class StoreSettingsController {
     private static final Logger logger = LoggerFactory.getLogger(StoreSettingsController.class);
 

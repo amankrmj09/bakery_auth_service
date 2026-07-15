@@ -1,5 +1,6 @@
 package com.shah_s.bakery_auth_service.controller;
 
+import org.devofblue.common.dto.MessageResponseDto;
 import com.shah_s.bakery_auth_service.dto.RegisterRequestDto;
 import com.shah_s.bakery_auth_service.dto.UserResponseDto;
 import com.shah_s.bakery_auth_service.entity.User;
@@ -40,6 +41,7 @@ public class UserController {
 
     // Get user profile
     @GetMapping("/profile")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserResponseDto> getUserProfile(HttpServletRequest request) throws AuthException {
         logger.info("Get user profile request received");
 
@@ -56,6 +58,7 @@ public class UserController {
 
     // Update user profile
     @PutMapping("/profile")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserResponseDto> updateUserProfile(
             @Valid @RequestBody RegisterRequestDto request,
             HttpServletRequest httpRequest) throws AuthException {
@@ -75,6 +78,7 @@ public class UserController {
 
     // Get user by ID (Admin or self only)
     @GetMapping("/{userId}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserResponseDto> getUserById(
             @PathVariable UUID userId,
             HttpServletRequest request) throws AuthException {
@@ -125,22 +129,17 @@ public class UserController {
     public ResponseEntity<List<UserResponseDto>> getUsersByRole(@PathVariable String role) {
         logger.info("Get users by role request received (admin) for role: {}", role);
 
-        try {
-            User.Role userRole = User.Role.valueOf(role.toUpperCase());
-            List<UserResponseDto> users = userService.getUsersByRole(userRole);
+        User.Role userRole = User.Role.valueOf(role.toUpperCase());
+        List<UserResponseDto> users = userService.getUsersByRole(userRole);
 
-            logger.info("Users by role retrieved, count: {}", users.size());
-            return ResponseEntity.ok(users);
-        } catch (IllegalArgumentException e) {
-            logger.warn("Invalid role requested: {}", role);
-            return ResponseEntity.badRequest().build();
-        }
+        logger.info("Users by role retrieved, count: {}", users.size());
+        return ResponseEntity.ok(users);
     }
 
     // Update user role (Admin only)
     @PutMapping("/admin/{userId}/role")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Map<String, String>> updateUserRole(
+    public ResponseEntity<MessageResponseDto> updateUserRole(
             @PathVariable UUID userId,
             @RequestBody Map<String, String> request) {
 
@@ -151,25 +150,17 @@ public class UserController {
             return ResponseEntity.badRequest().build();
         }
 
-        try {
-            User.Role role = User.Role.valueOf(roleStr.toUpperCase());
-            userService.updateUserRole(userId, role);
+        User.Role role = User.Role.valueOf(roleStr.toUpperCase());
+        userService.updateUserRole(userId, role);
 
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "User role updated successfully");
-
-            logger.info("User role updated to {} for user ID: {}", role, userId);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException | AuthException e) {
-            logger.warn("Invalid role requested: {}", roleStr);
-            return ResponseEntity.badRequest().build();
-        }
+        logger.info("User role updated to {} for user ID: {}", role, userId);
+        return ResponseEntity.ok(new MessageResponseDto("User role updated successfully"));
     }
 
     // Update user status (Admin only)
     @PutMapping("/admin/{userId}/status")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Map<String, String>> updateUserStatus(
+    public ResponseEntity<MessageResponseDto> updateUserStatus(
             @PathVariable UUID userId,
             @RequestBody Map<String, String> request) {
 
@@ -180,49 +171,35 @@ public class UserController {
             return ResponseEntity.badRequest().build();
         }
 
-        try {
-            User.UserStatus status = User.UserStatus.valueOf(statusStr.toUpperCase());
-            userService.updateUserStatus(userId, status);
+        User.UserStatus status = User.UserStatus.valueOf(statusStr.toUpperCase());
+        userService.updateUserStatus(userId, status);
 
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "User status updated successfully");
-
-            logger.info("User status updated to {} for user ID: {}", status, userId);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException | AuthException e) {
-            logger.warn("Invalid status requested: {}", statusStr);
-            return ResponseEntity.badRequest().build();
-        }
+        logger.info("User status updated to {} for user ID: {}", status, userId);
+        return ResponseEntity.ok(new MessageResponseDto("User status updated successfully"));
     }
 
     // Unlock user account (Admin only)
     @PostMapping("/admin/{userId}/unlock")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Map<String, String>> unlockUserAccount(@PathVariable UUID userId) throws AuthException {
+    public ResponseEntity<MessageResponseDto> unlockUserAccount(@PathVariable UUID userId) throws AuthException {
         logger.info("Unlock user account request received (admin) for user ID: {}", userId);
 
         userService.unlockAccount(userId);
 
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "User account unlocked successfully");
-
         logger.info("User account unlocked for user ID: {}", userId);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new MessageResponseDto("User account unlocked successfully"));
     }
 
     // Delete user (Admin only)
     @DeleteMapping("/admin/{userId}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Map<String, String>> deleteUser(@PathVariable UUID userId) throws AuthException {
+    public ResponseEntity<MessageResponseDto> deleteUser(@PathVariable UUID userId) throws AuthException {
         logger.info("Delete user request received (admin) for user ID: {}", userId);
 
         userService.deleteUser(userId);
 
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "User deleted successfully");
-
         logger.info("User deleted for user ID: {}", userId);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new MessageResponseDto("User deleted successfully"));
     }
 
     // Get user statistics (Admin only)

@@ -31,10 +31,13 @@ public class AuthService {
     
     final private KafkaTemplate<String, Object> kafkaTemplate;
 
-    public AuthService(UserService userService, JwtService jwtService, KafkaTemplate<String, Object> kafkaTemplate) {
+    private final org.springframework.security.authentication.AuthenticationManager authenticationManager;
+
+    public AuthService(UserService userService, JwtService jwtService, KafkaTemplate<String, Object> kafkaTemplate, org.springframework.security.authentication.AuthenticationManager authenticationManager) {
         this.userService = userService;
         this.jwtService = jwtService;
         this.kafkaTemplate = kafkaTemplate;
+        this.authenticationManager = authenticationManager;
     }
 
     // User registration
@@ -86,28 +89,25 @@ public class AuthService {
                 throw new AccountLockedException("Account is locked due to too many failed login attempts. Please try again later.");
             }
 
-            // Find user by username or email
-            Optional<User> userOptional = userService.findByUsernameOrEmail(request.getUsernameOrEmail());
-
-            if (userOptional.isEmpty()) {
-                // Record failed attempt even for non-existent user (prevent user enumeration)
-                userService.recordFailedLogin(request.getUsernameOrEmail());
-                throw new InvalidCredentialsException("Invalid credentials");
-            }
-
-            User user = userOptional.get();
-
-            // Check if user is active
-            if (!user.isActive()) {
-                throw new AccountLockedException("Account is not active. Please contact support.");
-            }
-
-            // Validate password
-            if (!userService.validateCredentials(request.getUsernameOrEmail(), request.getPassword())) {
+            // Authenticate using AuthenticationManager
+            org.springframework.security.core.Authentication authentication;
+            try {
+                authentication = authenticationManager.authenticate(
+                        new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                                request.getUsernameOrEmail(),
+                                request.getPassword()
+                        )
+                );
+            } catch (org.springframework.security.core.AuthenticationException e) {
                 // Record failed login attempt
                 userService.recordFailedLogin(request.getUsernameOrEmail());
                 throw new InvalidCredentialsException("Invalid credentials");
             }
+
+            // Get user from authentication context
+            com.shah_s.bakery_auth_service.security.CustomUserDetails userDetails = 
+                (com.shah_s.bakery_auth_service.security.CustomUserDetails) authentication.getPrincipal();
+            User user = userDetails.getUser();
 
             // Record successful login
             userService.recordSuccessfulLogin(user.getId());

@@ -12,9 +12,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
+import org.devofblue.common.dto.MessageResponseDto;
+import org.devofblue.common.dto.HealthResponseDto;
+import com.shah_s.bakery_auth_service.dto.TokenValidationResponseDto;
+import org.devofblue.common.exception.UnauthenticatedException;
+import org.devofblue.common.exception.InvalidTokenException;
 import java.util.Map;
 import java.util.UUID;
 
@@ -94,7 +99,7 @@ public class AuthController {
 
     // Validate Token (for other microservices)
     @PostMapping("/validate")
-    public ResponseEntity<Map<String, Object>> validateToken(HttpServletRequest request) {
+    public ResponseEntity<TokenValidationResponseDto> validateToken(HttpServletRequest request) {
         logger.debug("Token validation request received");
 
         String authHeader = request.getHeader("Authorization");
@@ -102,20 +107,21 @@ public class AuthController {
 
         if (token == null) {
             logger.warn("No token provided for validation");
-            return ResponseEntity.badRequest().body(createErrorResponse("No token provided"));
+            throw new UnauthenticatedException("No token provided");
         }
 
         AuthService.TokenValidationResponse validation = authService.validateToken(token);
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("valid", validation.isValid());
-        response.put("message", validation.getMessage());
+        TokenValidationResponseDto response = TokenValidationResponseDto.builder()
+                .valid(validation.isValid())
+                .message(validation.getMessage())
+                .build();
 
         if (validation.isValid()) {
-            response.put("userId", validation.getUserId());
-            response.put("username", validation.getUsername());
-            response.put("email", validation.getEmail());
-            response.put("role", validation.getRole());
+            response.setUserId(validation.getUserId());
+            response.setUsername(validation.getUsername());
+            response.setEmail(validation.getEmail());
+            response.setRole(validation.getRole());
             logger.debug("Token validation successful for user: {}", validation.getUsername());
         } else {
             logger.debug("Token validation failed: {}", validation.getMessage());
@@ -126,26 +132,27 @@ public class AuthController {
 
     // Alternative validate token endpoint (from request body)
     @PostMapping("/validate-token")
-    public ResponseEntity<Map<String, Object>> validateTokenFromBody(@RequestBody Map<String, String> request) {
+    public ResponseEntity<TokenValidationResponseDto> validateTokenFromBody(@RequestBody Map<String, String> request) {
         logger.debug("Token validation request received (from body)");
 
         String token = request.get("token");
         if (token == null || token.trim().isEmpty()) {
             logger.warn("No token provided for validation");
-            return ResponseEntity.badRequest().body(createErrorResponse("No token provided"));
+            throw new UnauthenticatedException("No token provided");
         }
 
         AuthService.TokenValidationResponse validation = authService.validateToken(token);
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("valid", validation.isValid());
-        response.put("message", validation.getMessage());
+        TokenValidationResponseDto response = TokenValidationResponseDto.builder()
+                .valid(validation.isValid())
+                .message(validation.getMessage())
+                .build();
 
         if (validation.isValid()) {
-            response.put("userId", validation.getUserId());
-            response.put("username", validation.getUsername());
-            response.put("email", validation.getEmail());
-            response.put("role", validation.getRole());
+            response.setUserId(validation.getUserId());
+            response.setUsername(validation.getUsername());
+            response.setEmail(validation.getEmail());
+            response.setRole(validation.getRole());
             logger.debug("Token validation successful for user: {}", validation.getUsername());
         } else {
             logger.debug("Token validation failed: {}", validation.getMessage());
@@ -156,7 +163,8 @@ public class AuthController {
 
     // Logout
     @PostMapping("/logout")
-    public ResponseEntity<Map<String, String>> logout(HttpServletRequest request) {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<MessageResponseDto> logout(HttpServletRequest request) {
         logger.info("Logout request received");
 
         String authHeader = request.getHeader("Authorization");
@@ -166,16 +174,14 @@ public class AuthController {
             authService.logout(token);
         }
 
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Logout successful");
-
         logger.info("Logout processed successfully");
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new MessageResponseDto("Logout successful"));
     }
 
     // Change Password
     @PostMapping("/change-password")
-    public ResponseEntity<Map<String, Object>> changePassword(
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<MessageResponseDto> changePassword(
             @RequestBody Map<String, String> request,
             HttpServletRequest httpRequest) throws AuthException {
 
@@ -185,7 +191,7 @@ public class AuthController {
         String token = jwtService.extractTokenFromHeader(authHeader);
 
         if (token == null) {
-            return ResponseEntity.badRequest().body(createErrorResponse("Authentication required"));
+            throw new UnauthenticatedException("Authentication required");
         }
 
         UUID userId = jwtService.extractUserId(token);
@@ -193,76 +199,61 @@ public class AuthController {
         String newPassword = request.get("newPassword");
 
         if (currentPassword == null || newPassword == null) {
-            return ResponseEntity.badRequest().body(createErrorResponse("Current password and new password are required"));
+            throw new IllegalArgumentException("Current password and new password are required");
         }
 
         authService.changePassword(userId, currentPassword, newPassword);
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "Password changed successfully");
-
         logger.info("Password change successful for user ID: {}", userId);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new MessageResponseDto("Password changed successfully"));
     }
 
     // Verify Email
     @PostMapping("/verify-email/{userId}")
-    public ResponseEntity<Map<String, String>> verifyEmail(@PathVariable UUID userId) throws AuthException {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<MessageResponseDto> verifyEmail(@PathVariable UUID userId) throws AuthException {
         logger.info("Email verification request received for user ID: {}", userId);
 
         authService.verifyEmail(userId);
 
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Email verified successfully");
-
         logger.info("Email verification successful for user ID: {}", userId);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new MessageResponseDto("Email verified successfully"));
     }
 
     // Health check endpoint
     @GetMapping("/health")
-    public ResponseEntity<Map<String, String>> health() {
-        Map<String, String> response = new HashMap<>();
-        response.put("status", "UP");
-        response.put("service", "bakery-auth-service");
-        response.put("timestamp", java.time.LocalDateTime.now().toString());
-
-        return ResponseEntity.ok(response);
+    public ResponseEntity<HealthResponseDto> health() {
+        return ResponseEntity.ok(new HealthResponseDto("UP", "bakery-auth-service"));
     }
 
     // Get current user info (from token)
     @GetMapping("/me")
-    public ResponseEntity<Map<String, Object>> getCurrentUser(HttpServletRequest request) {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<TokenValidationResponseDto> getCurrentUser(HttpServletRequest request) {
         logger.debug("Current user info request received");
 
         String authHeader = request.getHeader("Authorization");
         String token = jwtService.extractTokenFromHeader(authHeader);
 
         if (token == null) {
-            return ResponseEntity.badRequest().body(createErrorResponse("Authentication required"));
+            throw new UnauthenticatedException("Authentication required");
         }
 
         AuthService.TokenValidationResponse validation = authService.validateToken(token);
 
         if (!validation.isValid()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(createErrorResponse("Invalid token"));
+            throw new InvalidTokenException("Invalid token");
         }
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("userId", validation.getUserId());
-        response.put("username", validation.getUsername());
-        response.put("email", validation.getEmail());
-        response.put("role", validation.getRole());
+        TokenValidationResponseDto response = TokenValidationResponseDto.builder()
+                .valid(validation.isValid())
+                .message(validation.getMessage())
+                .userId(validation.getUserId())
+                .username(validation.getUsername())
+                .email(validation.getEmail())
+                .role(validation.getRole())
+                .build();
 
         return ResponseEntity.ok(response);
-    }
-
-    // Utility method to create error responses
-    private Map<String, Object> createErrorResponse(String message) {
-        Map<String, Object> error = new HashMap<>();
-        error.put("error", true);
-        error.put("message", message);
-        error.put("timestamp", java.time.LocalDateTime.now().toString());
-        return error;
     }
 }
