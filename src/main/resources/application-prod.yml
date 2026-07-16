@@ -28,3 +28,7 @@ app:
     email: ${ADMIN_EMAIL}
     password: ${ADMIN_PASSWORD}
     phone: ${ADMIN_PHONE}
+
+springdoc:
+  api-docs:
+    enabled: ${ENABLE_SWAGGER:false}

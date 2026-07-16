@@ -17,6 +17,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 import java.util.HashMap;
 import java.util.List;
@@ -25,6 +27,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/users")
+@Tag(name = "User Management", description = "Endpoints for managing users and profiles")
 
 public class UserController {
 
@@ -42,6 +45,7 @@ public class UserController {
     // Get user profile
     @GetMapping("/profile")
     @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Get current user profile")
     public ResponseEntity<UserResponseDto> getUserProfile(HttpServletRequest request) throws AuthException {
         logger.info("Get user profile request received");
 
@@ -59,6 +63,7 @@ public class UserController {
     // Update user profile
     @PutMapping("/profile")
     @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Update current user profile")
     public ResponseEntity<UserResponseDto> updateUserProfile(
             @Valid @RequestBody RegisterRequestDto request,
             HttpServletRequest httpRequest) throws AuthException {
@@ -79,6 +84,7 @@ public class UserController {
     // Get user by ID (Admin or self only)
     @GetMapping("/{userId}")
     @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Get user by ID")
     public ResponseEntity<UserResponseDto> getUserById(
             @PathVariable UUID userId,
             HttpServletRequest request) throws AuthException {
@@ -102,6 +108,7 @@ public class UserController {
     // Admin endpoints
     @GetMapping("/admin/all")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get all users (Admin)")
     public ResponseEntity<List<UserResponseDto>> getAllUsers() {
         logger.info("Get all users request received (admin)");
 
@@ -114,6 +121,7 @@ public class UserController {
     // Search users (Admin only)
     @GetMapping("/admin/search")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Search users by query (Admin)")
     public ResponseEntity<List<UserResponseDto>> searchUsers(@RequestParam String query) {
         logger.info("Search users request received (admin) with query: {}", query);
 
@@ -126,6 +134,7 @@ public class UserController {
     // Get users by role (Admin only)
     @GetMapping("/admin/role/{role}")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get users by role (Admin)")
     public ResponseEntity<List<UserResponseDto>> getUsersByRole(@PathVariable String role) {
         logger.info("Get users by role request received (admin) for role: {}", role);
 
@@ -139,6 +148,7 @@ public class UserController {
     // Update user role (Admin only)
     @PutMapping("/admin/{userId}/role")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Update user role (Admin)")
     public ResponseEntity<MessageResponseDto> updateUserRole(
             @PathVariable UUID userId,
             @RequestBody Map<String, String> request) {
@@ -160,6 +170,7 @@ public class UserController {
     // Update user status (Admin only)
     @PutMapping("/admin/{userId}/status")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Update user status (Admin)")
     public ResponseEntity<MessageResponseDto> updateUserStatus(
             @PathVariable UUID userId,
             @RequestBody Map<String, String> request) {
@@ -181,6 +192,7 @@ public class UserController {
     // Unlock user account (Admin only)
     @PostMapping("/admin/{userId}/unlock")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Unlock user account (Admin)")
     public ResponseEntity<MessageResponseDto> unlockUserAccount(@PathVariable UUID userId) throws AuthException {
         logger.info("Unlock user account request received (admin) for user ID: {}", userId);
 
@@ -193,6 +205,7 @@ public class UserController {
     // Delete user (Admin only)
     @DeleteMapping("/admin/{userId}")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Delete user (Admin)")
     public ResponseEntity<MessageResponseDto> deleteUser(@PathVariable UUID userId) throws AuthException {
         logger.info("Delete user request received (admin) for user ID: {}", userId);
 
@@ -205,6 +218,7 @@ public class UserController {
     // Get user statistics (Admin only)
     @GetMapping("/admin/statistics")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get user statistics (Admin)")
     public ResponseEntity<Map<String, Long>> getUserStatistics() {
         logger.info("Get user statistics request received (admin)");
 
@@ -217,6 +231,7 @@ public class UserController {
     // Get central dashboard statistics (Admin only)
     @GetMapping("/admin/dashboard-stats")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get dashboard statistics (Admin)")
     public ResponseEntity<Map<String, Object>> getDashboardStats(
             @RequestParam(defaultValue = "1m") String timeframe) {
         logger.info("Get dashboard statistics request received (admin) for timeframe: {}", timeframe);

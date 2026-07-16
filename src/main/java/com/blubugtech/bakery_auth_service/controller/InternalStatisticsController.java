@@ -6,12 +6,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 import java.math.BigDecimal;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users/internal/stats")
+@Tag(name = "Internal Statistics", description = "Endpoints for internal metrics and statistics")
 public class InternalStatisticsController {
 
     private static final Logger logger = LoggerFactory.getLogger(InternalStatisticsController.class);
@@ -26,6 +29,7 @@ public class InternalStatisticsController {
     }
 
     @PostMapping("/increment-orders")
+    @Operation(summary = "Increment total orders")
     public ResponseEntity<Void> incrementOrders(@RequestHeader(value = "X-User-Role", required = false) String userRole) {
         if (!isSystemAuthorized(userRole)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
@@ -35,6 +39,7 @@ public class InternalStatisticsController {
     }
 
     @PostMapping("/decrement-orders")
+    @Operation(summary = "Decrement total orders")
     public ResponseEntity<Void> decrementOrders(@RequestHeader(value = "X-User-Role", required = false) String userRole) {
         if (!isSystemAuthorized(userRole)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
@@ -44,6 +49,7 @@ public class InternalStatisticsController {
     }
 
     @PostMapping("/add-revenue")
+    @Operation(summary = "Add revenue to statistics")
     public ResponseEntity<Void> addRevenue(@RequestBody Map<String, Object> payload, @RequestHeader(value = "X-User-Role", required = false) String userRole) {
         if (!isSystemAuthorized(userRole)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
