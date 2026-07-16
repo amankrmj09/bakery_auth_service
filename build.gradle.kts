@@ -56,7 +56,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-security")
 
 	// 7. Third-Party Utilities (Jackson, AWS, etc.)
-	implementation("org.springdoc:springdoc-openapi-starter-webmvc-api:2.8.4")
+	implementation("org.springdoc:springdoc-openapi-starter-webmvc-api:2.8.17")
 	implementation("io.swagger.core.v3:swagger-annotations:2.2.52")
 	implementation("io.jsonwebtoken:jjwt-api:0.12.6")
 	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
@@ -65,6 +65,9 @@ dependencies {
 
 	// 8. Tooling & Lombok
 	compileOnly("org.projectlombok:lombok")
+	implementation("org.mapstruct:mapstruct:1.5.5.Final")
+	annotationProcessor("org.mapstruct:mapstruct-processor:1.5.5.Final")
+	annotationProcessor("org.projectlombok:lombok-mapstruct-binding:0.2.0")
 	annotationProcessor("org.projectlombok:lombok")
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
 	runtimeOnly("org.springframework.boot:spring-boot-docker-compose")

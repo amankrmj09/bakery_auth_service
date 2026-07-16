@@ -1,4 +1,4 @@
-package com.blubugtech.bakery_auth_service.service;
+package com.blubugtech.bakery_auth_service.service.dashboard;
 
 import com.blubugtech.bakery_auth_service.entity.DashboardStatistics;
 import com.blubugtech.bakery_auth_service.entity.DashboardStatisticsSnapshot;
@@ -18,13 +18,13 @@ import java.util.Map;
 import java.util.Optional;
 
 @Service
-public class DashboardStatisticsService {
+public class DashboardStatisticsServiceImpl implements DashboardStatisticsService {
     private static final Logger logger = LoggerFactory.getLogger(DashboardStatisticsService.class);
 
     private final DashboardStatisticsRepository dashboardStatisticsRepository;
     private final DashboardStatisticsSnapshotRepository snapshotRepository;
 
-    public DashboardStatisticsService(DashboardStatisticsRepository dashboardStatisticsRepository,
+    public DashboardStatisticsServiceImpl(DashboardStatisticsRepository dashboardStatisticsRepository,
                                       DashboardStatisticsSnapshotRepository snapshotRepository) {
         this.dashboardStatisticsRepository = dashboardStatisticsRepository;
         this.snapshotRepository = snapshotRepository;

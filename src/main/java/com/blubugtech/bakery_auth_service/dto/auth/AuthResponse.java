@@ -1,4 +1,4 @@
-package com.blubugtech.bakery_auth_service.dto;
+package com.blubugtech.bakery_auth_service.dto.auth;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.blubugtech.bakery_auth_service.entity.User;
@@ -10,7 +10,7 @@ import java.util.UUID;
 
 @Setter
 @Getter
-public class AuthResponseDto {
+public class AuthResponse {
 
     // Getters and Setters
     @JsonProperty("access_token")
@@ -28,9 +28,9 @@ public class AuthResponseDto {
     private UserInfo user;
 
     // Constructors
-    public AuthResponseDto() {}
+    public AuthResponse() {}
 
-    public AuthResponseDto(String accessToken, String refreshToken, Long expiresIn, UserInfo user) {
+    public AuthResponse(String accessToken, String refreshToken, Long expiresIn, UserInfo user) {
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;
         this.expiresIn = expiresIn;
@@ -38,8 +38,8 @@ public class AuthResponseDto {
     }
 
     // Static factory method
-    public static AuthResponseDto of(String accessToken, String refreshToken, Long expiresIn, User user) {
-        return new AuthResponseDto(accessToken, refreshToken, expiresIn, UserInfo.from(user));
+    public static AuthResponse of(String accessToken, String refreshToken, Long expiresIn, User user) {
+        return new AuthResponse(accessToken, refreshToken, expiresIn, UserInfo.from(user));
     }
 
     // Inner class for user information

@@ -1,4 +1,4 @@
-package com.blubugtech.bakery_auth_service.dto;
+package com.blubugtech.bakery_auth_service.dto.auth;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -8,7 +8,7 @@ import lombok.Setter;
 
 @Setter
 @Getter
-public class LoginRequestDto {
+public class LoginRequest {
 
     // Getters and Setters
     @NotBlank(message = "Username or email is required")
@@ -18,9 +18,9 @@ public class LoginRequestDto {
     private String password;
 
     // Constructors
-    public LoginRequestDto() {}
+    public LoginRequest() {}
 
-    public LoginRequestDto(String usernameOrEmail, String password) {
+    public LoginRequest(String usernameOrEmail, String password) {
         this.usernameOrEmail = usernameOrEmail;
         this.password = password;
     }

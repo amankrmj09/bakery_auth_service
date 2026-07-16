@@ -1,4 +1,4 @@
-package com.blubugtech.bakery_auth_service.service;
+package com.blubugtech.bakery_auth_service.security;
 
 import com.blubugtech.bakery_auth_service.entity.User;
 import io.jsonwebtoken.*;

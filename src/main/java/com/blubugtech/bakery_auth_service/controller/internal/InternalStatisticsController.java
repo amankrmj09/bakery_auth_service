@@ -1,6 +1,6 @@
-package com.blubugtech.bakery_auth_service.controller;
+package com.blubugtech.bakery_auth_service.controller.internal;
 
-import com.blubugtech.bakery_auth_service.service.DashboardStatisticsService;
+import com.blubugtech.bakery_auth_service.service.dashboard.DashboardStatisticsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;

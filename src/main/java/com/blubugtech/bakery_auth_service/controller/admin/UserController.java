@@ -1,26 +1,25 @@
-package com.blubugtech.bakery_auth_service.controller;
+package com.blubugtech.bakery_auth_service.controller.admin;
 
-import com.blubugtech.common.dto.MessageResponseDto;
-import com.blubugtech.bakery_auth_service.dto.RegisterRequestDto;
-import com.blubugtech.bakery_auth_service.dto.UserResponseDto;
+import com.blubugtech.bakery_auth_service.dto.auth.RegisterRequest;
+import com.blubugtech.bakery_auth_service.dto.user.UserResponse;
 import com.blubugtech.bakery_auth_service.entity.User;
 import com.blubugtech.bakery_auth_service.exception.AuthException;
-import com.blubugtech.bakery_auth_service.service.JwtService;
-import com.blubugtech.bakery_auth_service.service.UserService;
-import com.blubugtech.bakery_auth_service.service.DashboardStatisticsService;
-import com.blubugtech.bakery_auth_service.entity.DashboardStatistics;
+import com.blubugtech.bakery_auth_service.security.JwtService;
+import com.blubugtech.bakery_auth_service.service.dashboard.DashboardStatisticsService;
+import com.blubugtech.bakery_auth_service.service.user.UserService;
+import com.blubugtech.common.dto.MessageResponseDto;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.Operation;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -29,24 +28,22 @@ import java.util.UUID;
 @RequestMapping("/api/users")
 @Tag(name = "User Management", description = "Endpoints for managing users and profiles")
 
+@AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class UserController {
 
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
-    @Autowired
     private UserService userService;
 
-    @Autowired
     private JwtService jwtService;
 
-    @Autowired
     private DashboardStatisticsService dashboardStatisticsService;
 
     // Get user profile
     @GetMapping("/profile")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get current user profile")
-    public ResponseEntity<UserResponseDto> getUserProfile(HttpServletRequest request) throws AuthException {
+    public ResponseEntity<UserResponse> getUserProfile(HttpServletRequest request) throws AuthException {
         logger.info("Get user profile request received");
 
         UUID userId = extractUserIdFromToken(request);
@@ -54,7 +51,7 @@ public class UserController {
             return ResponseEntity.badRequest().build();
         }
 
-        UserResponseDto userResponse = userService.getUserProfile(userId);
+        UserResponse userResponse = userService.getUserProfile(userId);
 
         logger.info("User profile retrieved for user ID: {}", userId);
         return ResponseEntity.ok(userResponse);
@@ -64,8 +61,8 @@ public class UserController {
     @PutMapping("/profile")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Update current user profile")
-    public ResponseEntity<UserResponseDto> updateUserProfile(
-            @Valid @RequestBody RegisterRequestDto request,
+    public ResponseEntity<UserResponse> updateUserProfile(
+            @Valid @RequestBody RegisterRequest request,
             HttpServletRequest httpRequest) throws AuthException {
 
         logger.info("Update user profile request received");
@@ -75,7 +72,7 @@ public class UserController {
             return ResponseEntity.badRequest().build();
         }
 
-        UserResponseDto userResponse = userService.updateUserProfile(userId, request);
+        UserResponse userResponse = userService.updateUserProfile(userId, request);
 
         logger.info("User profile updated for user ID: {}", userId);
         return ResponseEntity.ok(userResponse);
@@ -85,7 +82,7 @@ public class UserController {
     @GetMapping("/{userId}")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get user by ID")
-    public ResponseEntity<UserResponseDto> getUserById(
+    public ResponseEntity<UserResponse> getUserById(
             @PathVariable UUID userId,
             HttpServletRequest request) throws AuthException {
 
@@ -99,7 +96,7 @@ public class UserController {
             return ResponseEntity.status(403).build(); // Forbidden
         }
 
-        UserResponseDto userResponse = userService.getUserProfile(userId);
+        UserResponse userResponse = userService.getUserProfile(userId);
 
         logger.info("User retrieved for user ID: {}", userId);
         return ResponseEntity.ok(userResponse);
@@ -109,10 +106,10 @@ public class UserController {
     @GetMapping("/admin/all")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get all users (Admin)")
-    public ResponseEntity<List<UserResponseDto>> getAllUsers() {
+    public ResponseEntity<List<UserResponse>> getAllUsers() {
         logger.info("Get all users request received (admin)");
 
-        List<UserResponseDto> users = userService.getAllUsers();
+        List<UserResponse> users = userService.getAllUsers();
 
         logger.info("All users retrieved, count: {}", users.size());
         return ResponseEntity.ok(users);
@@ -122,10 +119,10 @@ public class UserController {
     @GetMapping("/admin/search")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Search users by query (Admin)")
-    public ResponseEntity<List<UserResponseDto>> searchUsers(@RequestParam String query) {
+    public ResponseEntity<List<UserResponse>> searchUsers(@RequestParam String query) {
         logger.info("Search users request received (admin) with query: {}", query);
 
-        List<UserResponseDto> users = userService.searchUsers(query);
+        List<UserResponse> users = userService.searchUsers(query);
 
         logger.info("User search completed, results: {}", users.size());
         return ResponseEntity.ok(users);
@@ -135,11 +132,11 @@ public class UserController {
     @GetMapping("/admin/role/{role}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get users by role (Admin)")
-    public ResponseEntity<List<UserResponseDto>> getUsersByRole(@PathVariable String role) {
+    public ResponseEntity<List<UserResponse>> getUsersByRole(@PathVariable String role) {
         logger.info("Get users by role request received (admin) for role: {}", role);
 
         User.Role userRole = User.Role.valueOf(role.toUpperCase());
-        List<UserResponseDto> users = userService.getUsersByRole(userRole);
+        List<UserResponse> users = userService.getUsersByRole(userRole);
 
         logger.info("Users by role retrieved, count: {}", users.size());
         return ResponseEntity.ok(users);

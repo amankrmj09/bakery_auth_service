@@ -1,9 +1,12 @@
-package com.blubugtech.bakery_auth_service.service;
+package com.blubugtech.bakery_auth_service.service.auth;
 
-import com.blubugtech.bakery_auth_service.dto.AuthResponseDto;
-import com.blubugtech.bakery_auth_service.dto.LoginRequestDto;
-import com.blubugtech.bakery_auth_service.dto.RegisterRequestDto;
+import com.blubugtech.bakery_auth_service.dto.auth.AuthResponse;
+import com.blubugtech.bakery_auth_service.dto.auth.LoginRequest;
+import com.blubugtech.bakery_auth_service.dto.auth.RegisterRequest;
 import com.blubugtech.bakery_auth_service.entity.User;
+import com.blubugtech.bakery_auth_service.dto.auth.TokenValidationResponse;
+import com.blubugtech.bakery_auth_service.service.user.UserService;
+import com.blubugtech.bakery_auth_service.security.JwtService;
 import com.blubugtech.bakery_auth_service.exception.*;
 import lombok.Getter;
 import org.slf4j.Logger;
@@ -21,7 +24,7 @@ import java.util.UUID;
 
 @Service
 @Transactional
-public class AuthService {
+public class AuthServiceImpl implements AuthService {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
 
@@ -35,7 +38,7 @@ public class AuthService {
 
     @org.springframework.beans.factory.annotation.Value("${kafka.topic.user-events:user-events}")
     private String userEventsTopic;
-    public AuthService(UserService userService, JwtService jwtService, KafkaTemplate<String, Object> kafkaTemplate, org.springframework.security.authentication.AuthenticationManager authenticationManager) {
+    public AuthServiceImpl(UserService userService, JwtService jwtService, KafkaTemplate<String, Object> kafkaTemplate, org.springframework.security.authentication.AuthenticationManager authenticationManager) {
         this.userService = userService;
         this.jwtService = jwtService;
         this.kafkaTemplate = kafkaTemplate;
@@ -43,7 +46,7 @@ public class AuthService {
     }
 
     // User registration
-    public AuthResponseDto register(RegisterRequestDto request) throws AuthException {
+    public AuthResponse register(RegisterRequest request) throws AuthException {
         logger.info("Processing registration for username: {}", request.getUsername());
 
         try {
@@ -73,7 +76,7 @@ public class AuthService {
                 logger.error("Failed to publish UserEvent: {}", ex.getMessage());
             }
 
-            return AuthResponseDto.of(accessToken, refreshToken, expiresIn, user);
+            return AuthResponse.of(accessToken, refreshToken, expiresIn, user);
 
         } catch (Exception e) {
             logger.error("Registration failed for username: {} - {}", request.getUsername(), e.getMessage());
@@ -82,7 +85,7 @@ public class AuthService {
     }
 
     // User login
-    public AuthResponseDto login(LoginRequestDto request) throws AuthException {
+    public AuthResponse login(LoginRequest request) throws AuthException {
         logger.info("Processing login for user: {}", request.getUsernameOrEmail());
 
         try {
@@ -121,7 +124,7 @@ public class AuthService {
 
             logger.info("Login successful for user: {}", user.getUsername());
 
-            return AuthResponseDto.of(accessToken, refreshToken, expiresIn, user);
+            return AuthResponse.of(accessToken, refreshToken, expiresIn, user);
 
         } catch (AuthException e) {
             logger.warn("Login failed for user: {} - {}", request.getUsernameOrEmail(), e.getMessage());
@@ -133,7 +136,7 @@ public class AuthService {
     }
 
     // Refresh token
-    public AuthResponseDto refreshToken(String refreshToken) throws AuthException {
+    public AuthResponse refreshToken(String refreshToken) throws AuthException {
         logger.info("Processing token refresh");
 
         try {
@@ -175,7 +178,7 @@ public class AuthService {
 
             logger.info("Token refresh successful for user: {}", user.getUsername());
 
-            return AuthResponseDto.of(newAccessToken, newRefreshToken, expiresIn, user);
+            return AuthResponse.of(newAccessToken, newRefreshToken, expiresIn, user);
 
         } catch (AuthException e) {
             logger.warn("Token refresh failed: {}", e.getMessage());
@@ -295,33 +298,5 @@ public class AuthService {
         }
     }
 
-    // Inner class for token validation response
-    @Getter
-    public static class TokenValidationResponse {
-        // Getters
-        private final boolean valid;
-        private final String message;
-        private final UUID userId;
-        private final String username;
-        private final String email;
-        private final String role;
 
-        private TokenValidationResponse(boolean valid, String message, UUID userId, String username, String email, String role) {
-            this.valid = valid;
-            this.message = message;
-            this.userId = userId;
-            this.username = username;
-            this.email = email;
-            this.role = role;
-        }
-
-        public static TokenValidationResponse valid(UUID userId, String username, String email, String role) {
-            return new TokenValidationResponse(true, "Valid", userId, username, email, role);
-        }
-
-        public static TokenValidationResponse invalid(String message) {
-            return new TokenValidationResponse(false, message, null, null, null, null);
-        }
-
-    }
 }

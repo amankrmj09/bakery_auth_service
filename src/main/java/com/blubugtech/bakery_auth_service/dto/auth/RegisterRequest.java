@@ -1,4 +1,4 @@
-package com.blubugtech.bakery_auth_service.dto;
+package com.blubugtech.bakery_auth_service.dto.auth;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -8,7 +8,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class RegisterRequestDto {
+public class RegisterRequest {
 
     // Getters and Setters
     @NotBlank(message = "Username is required")
@@ -35,9 +35,9 @@ public class RegisterRequestDto {
     private String address;
 
     // Constructors
-    public RegisterRequestDto() {}
+    public RegisterRequest() {}
 
-    public RegisterRequestDto(String username, String email, String password, String firstName, String lastName) {
+    public RegisterRequest(String username, String email, String password, String firstName, String lastName) {
         this.username = username;
         this.email = email;
         this.password = password;

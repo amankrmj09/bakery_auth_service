@@ -1,4 +1,4 @@
-package com.blubugtech.bakery_auth_service.dto;
+package com.blubugtech.bakery_auth_service.dto.user;
 
 import com.blubugtech.bakery_auth_service.entity.User;
 import lombok.Getter;
@@ -9,7 +9,7 @@ import java.util.UUID;
 
 @Setter
 @Getter
-public class UserResponseDto {
+public class UserResponse {
 
     // Getters and Setters
     private UUID id;
@@ -26,11 +26,11 @@ public class UserResponseDto {
     private LocalDateTime createdAt;
 
     // Constructors
-    public UserResponseDto() {}
+    public UserResponse() {}
 
     // Static factory method
-    public static UserResponseDto from(User user) {
-        UserResponseDto response = new UserResponseDto();
+    public static UserResponse from(User user) {
+        UserResponse response = new UserResponse();
         response.id = user.getId();
         response.username = user.getUsername();
         response.email = user.getEmail();

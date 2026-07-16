@@ -1,11 +1,11 @@
-package com.blubugtech.bakery_auth_service.controller;
+package com.blubugtech.bakery_auth_service.controller.publicapi;
 
-import com.blubugtech.bakery_auth_service.dto.AuthResponseDto;
-import com.blubugtech.bakery_auth_service.dto.LoginRequestDto;
-import com.blubugtech.bakery_auth_service.dto.RegisterRequestDto;
+import com.blubugtech.bakery_auth_service.dto.auth.AuthResponse;
+import com.blubugtech.bakery_auth_service.dto.auth.LoginRequest;
+import com.blubugtech.bakery_auth_service.dto.auth.RegisterRequest;
 import com.blubugtech.bakery_auth_service.exception.AuthException;
-import com.blubugtech.bakery_auth_service.service.AuthService;
-import com.blubugtech.bakery_auth_service.service.JwtService;
+import com.blubugtech.bakery_auth_service.service.auth.AuthService;
+import com.blubugtech.bakery_auth_service.security.JwtService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -19,7 +19,7 @@ import io.swagger.v3.oas.annotations.Operation;
 
 import com.blubugtech.common.dto.MessageResponseDto;
 import com.blubugtech.common.dto.HealthResponseDto;
-import com.blubugtech.bakery_auth_service.dto.TokenValidationResponseDto;
+import com.blubugtech.bakery_auth_service.dto.auth.TokenValidationResponse;
 import com.blubugtech.common.exception.UnauthenticatedException;
 import com.blubugtech.common.exception.InvalidTokenException;
 import java.util.Map;
@@ -45,10 +45,10 @@ public class AuthController {
     // User Registration
     @PostMapping("/register")
     @Operation(summary = "Register a new user")
-    public ResponseEntity<AuthResponseDto> register(@Valid @RequestBody RegisterRequestDto request) throws AuthException {
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) throws AuthException {
         logger.info("Registration request received for username: {}", request.getUsername());
 
-        AuthResponseDto response = authService.register(request);
+        AuthResponse response = authService.register(request);
 
         logger.info("Registration successful for username: {}", request.getUsername());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -57,10 +57,10 @@ public class AuthController {
     // User Login
     @PostMapping("/login")
     @Operation(summary = "Login and get tokens")
-    public ResponseEntity<AuthResponseDto> login(@Valid @RequestBody LoginRequestDto request) throws AuthException {
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) throws AuthException {
         logger.info("Login request received for user: {}", request.getUsernameOrEmail());
 
-        AuthResponseDto response = authService.login(request);
+        AuthResponse response = authService.login(request);
 
         logger.info("Login successful for user: {}", request.getUsernameOrEmail());
         return ResponseEntity.ok(response);
@@ -69,7 +69,7 @@ public class AuthController {
     // Refresh Token
     @PostMapping("/refresh")
     @Operation(summary = "Refresh authentication token from header")
-    public ResponseEntity<AuthResponseDto> refreshToken(HttpServletRequest request) throws AuthException {
+    public ResponseEntity<AuthResponse> refreshToken(HttpServletRequest request) throws AuthException {
         logger.info("Token refresh request received");
 
         String authHeader = request.getHeader("Authorization");
@@ -80,7 +80,7 @@ public class AuthController {
             return ResponseEntity.badRequest().build();
         }
 
-        AuthResponseDto response = authService.refreshToken(refreshToken);
+        AuthResponse response = authService.refreshToken(refreshToken);
 
         logger.info("Token refresh successful");
         return ResponseEntity.ok(response);
@@ -89,7 +89,7 @@ public class AuthController {
     // Alternative refresh token endpoint (from request body)
     @PostMapping("/refresh-token")
     @Operation(summary = "Refresh authentication token from request body")
-    public ResponseEntity<AuthResponseDto> refreshTokenFromBody(@RequestBody Map<String, String> request) throws AuthException {
+    public ResponseEntity<AuthResponse> refreshTokenFromBody(@RequestBody Map<String, String> request) throws AuthException {
         logger.info("Token refresh request received (from body)");
 
         String refreshToken = request.get("refreshToken");
@@ -98,7 +98,7 @@ public class AuthController {
             return ResponseEntity.badRequest().build();
         }
 
-        AuthResponseDto response = authService.refreshToken(refreshToken);
+        AuthResponse response = authService.refreshToken(refreshToken);
 
         logger.info("Token refresh successful (from body)");
         return ResponseEntity.ok(response);
@@ -107,7 +107,7 @@ public class AuthController {
     // Validate Token (for other microservices)
     @PostMapping("/validate")
     @Operation(summary = "Validate token from header (for internal microservice use)")
-    public ResponseEntity<TokenValidationResponseDto> validateToken(HttpServletRequest request) {
+    public ResponseEntity<TokenValidationResponse> validateToken(HttpServletRequest request) {
         logger.debug("Token validation request received");
 
         String authHeader = request.getHeader("Authorization");
@@ -118,9 +118,9 @@ public class AuthController {
             throw new UnauthenticatedException("No token provided");
         }
 
-        AuthService.TokenValidationResponse validation = authService.validateToken(token);
+        TokenValidationResponse validation = authService.validateToken(token);
 
-        TokenValidationResponseDto response = TokenValidationResponseDto.builder()
+        TokenValidationResponse response = TokenValidationResponse.builder()
                 .valid(validation.isValid())
                 .message(validation.getMessage())
                 .build();
@@ -141,7 +141,7 @@ public class AuthController {
     // Alternative validate token endpoint (from request body)
     @PostMapping("/validate-token")
     @Operation(summary = "Validate token from body (for internal microservice use)")
-    public ResponseEntity<TokenValidationResponseDto> validateTokenFromBody(@RequestBody Map<String, String> request) {
+    public ResponseEntity<TokenValidationResponse> validateTokenFromBody(@RequestBody Map<String, String> request) {
         logger.debug("Token validation request received (from body)");
 
         String token = request.get("token");
@@ -150,9 +150,9 @@ public class AuthController {
             throw new UnauthenticatedException("No token provided");
         }
 
-        AuthService.TokenValidationResponse validation = authService.validateToken(token);
+        TokenValidationResponse validation = authService.validateToken(token);
 
-        TokenValidationResponseDto response = TokenValidationResponseDto.builder()
+        TokenValidationResponse response = TokenValidationResponse.builder()
                 .valid(validation.isValid())
                 .message(validation.getMessage())
                 .build();
@@ -243,7 +243,7 @@ public class AuthController {
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get current authenticated user info")
-    public ResponseEntity<TokenValidationResponseDto> getCurrentUser(HttpServletRequest request) {
+    public ResponseEntity<TokenValidationResponse> getCurrentUser(HttpServletRequest request) {
         logger.debug("Current user info request received");
 
         String authHeader = request.getHeader("Authorization");
@@ -253,13 +253,13 @@ public class AuthController {
             throw new UnauthenticatedException("Authentication required");
         }
 
-        AuthService.TokenValidationResponse validation = authService.validateToken(token);
+        TokenValidationResponse validation = authService.validateToken(token);
 
         if (!validation.isValid()) {
             throw new InvalidTokenException("Invalid token");
         }
 
-        TokenValidationResponseDto response = TokenValidationResponseDto.builder()
+        TokenValidationResponse response = TokenValidationResponse.builder()
                 .valid(validation.isValid())
                 .message(validation.getMessage())
                 .userId(validation.getUserId())

@@ -1,7 +1,10 @@
-package com.blubugtech.bakery_auth_service.service;
+package com.blubugtech.bakery_auth_service.service.user;
 
-import com.blubugtech.bakery_auth_service.dto.RegisterRequestDto;
-import com.blubugtech.bakery_auth_service.dto.UserResponseDto;
+import com.blubugtech.bakery_auth_service.dto.auth.RegisterRequest;
+import com.blubugtech.bakery_auth_service.dto.user.UserResponse;
+import com.blubugtech.bakery_auth_service.mapper.UserMapper;
+import com.blubugtech.bakery_auth_service.service.dashboard.DashboardStatisticsService;
+
 import com.blubugtech.bakery_auth_service.entity.User;
 import com.blubugtech.bakery_auth_service.exception.AuthException;
 import com.blubugtech.bakery_auth_service.repository.UserRepository;
@@ -19,13 +22,14 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
-public class UserService {
+public class UserServiceImpl implements UserService {
 
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final DashboardStatisticsService dashboardStatisticsService;
+    private final UserMapper userMapper;
 
     @Value("${security.login.max-attempts:5}")
     private Integer maxLoginAttempts;
@@ -34,14 +38,15 @@ public class UserService {
     private Long lockoutDuration;
 
     @Autowired
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, DashboardStatisticsService dashboardStatisticsService) {
+    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, DashboardStatisticsService dashboardStatisticsService, UserMapper userMapper) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.dashboardStatisticsService = dashboardStatisticsService;
+        this.userMapper = userMapper;
     }
 
     // Create new user
-    public User createUser(RegisterRequestDto request) throws AuthException {
+    public User createUser(RegisterRequest request) throws AuthException {
         logger.info("Creating new user with username: {}", request.getUsername());
 
         // Check if username already exists
@@ -98,14 +103,14 @@ public class UserService {
     }
 
     // Get user profile
-    public UserResponseDto getUserProfile(UUID userId) throws AuthException {
+    public UserResponse getUserProfile(UUID userId) throws AuthException {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AuthException("User not found"));
-        return UserResponseDto.from(user);
+        return userMapper.toDto(user);
     }
 
     // Update user profile
-    public UserResponseDto updateUserProfile(UUID userId, RegisterRequestDto request) throws AuthException {
+    public UserResponse updateUserProfile(UUID userId, RegisterRequest request) throws AuthException {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AuthException("User not found"));
 
@@ -143,7 +148,7 @@ public class UserService {
 
         User updatedUser = userRepository.save(user);
         logger.info("User profile updated for ID: {}", userId);
-        return UserResponseDto.from(updatedUser);
+        return userMapper.toDto(updatedUser);
     }
 
     // Update user password
@@ -216,23 +221,23 @@ public class UserService {
     }
 
     // Get all users (admin function)
-    public List<UserResponseDto> getAllUsers() {
+    public List<UserResponse> getAllUsers() {
         return userRepository.findAll().stream()
-                .map(UserResponseDto::from)
+                .map(UserResponse::from)
                 .collect(Collectors.toList());
     }
 
     // Search users
-    public List<UserResponseDto> searchUsers(String searchTerm) {
+    public List<UserResponse> searchUsers(String searchTerm) {
         return userRepository.searchUsers(searchTerm).stream()
-                .map(UserResponseDto::from)
+                .map(UserResponse::from)
                 .collect(Collectors.toList());
     }
 
     // Get users by role
-    public List<UserResponseDto> getUsersByRole(User.Role role) {
+    public List<UserResponse> getUsersByRole(User.Role role) {
         return userRepository.findByRole(role).stream()
-                .map(UserResponseDto::from)
+                .map(UserResponse::from)
                 .collect(Collectors.toList());
     }
 
