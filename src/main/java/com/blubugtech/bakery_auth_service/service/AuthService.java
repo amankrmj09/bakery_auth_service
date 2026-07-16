@@ -33,6 +33,8 @@ public class AuthService {
 
     private final org.springframework.security.authentication.AuthenticationManager authenticationManager;
 
+    @org.springframework.beans.factory.annotation.Value("${kafka.topic.user-events:user-events}")
+    private String userEventsTopic;
     public AuthService(UserService userService, JwtService jwtService, KafkaTemplate<String, Object> kafkaTemplate, org.springframework.security.authentication.AuthenticationManager authenticationManager) {
         this.userService = userService;
         this.jwtService = jwtService;
@@ -65,7 +67,7 @@ public class AuthService {
                         .action("REGISTERED")
                         .timestamp(java.time.LocalDateTime.now())
                         .build();
-                kafkaTemplate.send("user-events", user.getId().toString(), event);
+                kafkaTemplate.send(userEventsTopic, user.getId().toString(), event);
                 logger.info("Published UserEvent for registered user: {}", user.getId());
             } catch (Exception ex) {
                 logger.error("Failed to publish UserEvent: {}", ex.getMessage());
@@ -266,7 +268,7 @@ public class AuthService {
                             .action("PASSWORD_CHANGED")
                             .timestamp(java.time.LocalDateTime.now())
                             .build();
-                    kafkaTemplate.send("user-events", user.getId().toString(), event);
+                    kafkaTemplate.send(userEventsTopic, user.getId().toString(), event);
                     logger.info("Published UserEvent for password change: {}", user.getId());
                 }
             } catch (Exception ex) {
