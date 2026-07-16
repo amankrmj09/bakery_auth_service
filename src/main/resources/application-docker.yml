@@ -6,6 +6,8 @@ spring:
     password: auth_password
   jpa:
     show-sql: false
+  kafka:
+    bootstrap-servers: kafka:29092
 
 # Eureka Configuration for Docker
 eureka:

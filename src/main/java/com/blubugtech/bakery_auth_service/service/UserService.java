@@ -54,6 +54,12 @@ public class UserService {
             throw new AuthException("Email already exists");
         }
 
+        // Check if phone already exists
+        if (request.getPhone() != null && !request.getPhone().isEmpty() && 
+            userRepository.existsByPhone(request.getPhone())) {
+            throw new AuthException("Phone number already exists");
+        }
+
         // Create new user
         User user = new User();
         user.setUsername(request.getUsername());
@@ -113,6 +119,13 @@ public class UserService {
         if (!user.getUsername().equals(request.getUsername()) &&
                 userRepository.existsByUsername(request.getUsername())) {
             throw new AuthException("Username already exists");
+        }
+
+        // Check if new phone is already taken by another user
+        if (request.getPhone() != null && !request.getPhone().isEmpty() &&
+                !request.getPhone().equals(user.getPhone()) &&
+                userRepository.existsByPhone(request.getPhone())) {
+            throw new AuthException("Phone number already exists");
         }
 
         // Update user details
