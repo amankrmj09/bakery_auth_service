@@ -56,7 +56,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-security")
 
 	// 7. Third-Party Utilities (Jackson, AWS, etc.)
-	implementation("org.springdoc:springdoc-openapi-starter-webmvc-api:2.5.0")
+	implementation("org.springdoc:springdoc-openapi-starter-webmvc-api:2.8.4")
 	implementation("io.swagger.core.v3:swagger-annotations:2.2.52")
 	implementation("io.jsonwebtoken:jjwt-api:0.12.6")
 	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
