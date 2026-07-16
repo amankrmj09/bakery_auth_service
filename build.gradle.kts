@@ -30,39 +30,54 @@ repositories {
 val springCloudVersion by extra("2025.0.3")
 
 dependencies {
+	// 1. Shared Custom Libraries
 	implementation("org.blubugtech.com:common-libs:2.0.0")
+
+	// 2. Spring Boot Core & Web
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
-	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-data-rest")
-	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-web")
+
+	// 3. Spring Cloud & Discovery
 	implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
-	implementation("org.springframework.kafka:spring-kafka")
 	implementation("org.springframework.cloud:spring-cloud-starter-config")
+
+	// 4. Data & Persistence
+	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-data-redis")
 	implementation("org.flywaydb:flyway-core")
 	implementation("org.flywaydb:flyway-database-postgresql")
-	compileOnly("org.projectlombok:lombok")
-	developmentOnly("org.springframework.boot:spring-boot-devtools")
-	// runtimeOnly("io.micrometer:micrometer-registry-prometheus")
 	runtimeOnly("org.postgresql:postgresql")
-	annotationProcessor("org.projectlombok:lombok")
-	
+
+	// 5. Messaging & Event Driven
+	implementation("org.springframework.kafka:spring-kafka")
+
+	// 6. Security
+	implementation("org.springframework.boot:spring-boot-starter-security")
+
+	// 7. Third-Party Utilities (Jackson, AWS, etc.)
 	implementation("io.jsonwebtoken:jjwt-api:0.12.6")
 	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
 	runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.6")
 	implementation("org.bouncycastle:bcprov-jdk18on:1.84")
-	
+
+	// 8. Tooling & Lombok
+	compileOnly("org.projectlombok:lombok")
+	annotationProcessor("org.projectlombok:lombok")
+	developmentOnly("org.springframework.boot:spring-boot-devtools")
+	runtimeOnly("org.springframework.boot:spring-boot-docker-compose")
+	// runtimeOnly("io.micrometer:micrometer-registry-prometheus")
+
+	// 9. Testing
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
+	testImplementation("org.springframework.security:spring-security-test")
+	testImplementation("com.h2database:h2")
+	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 	// testImplementation("org.springframework.boot:spring-boot-testcontainers")
 	// testImplementation("org.springframework.restdocs:spring-restdocs-mockmvc")
-	testImplementation("org.springframework.security:spring-security-test")
 	// testImplementation("org.testcontainers:junit-jupiter")
 	// testImplementation("org.testcontainers:postgresql")
-	testImplementation("com.h2database:h2")
-	runtimeOnly("org.springframework.boot:spring-boot-docker-compose")
-	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 dependencyManagement {
 	imports {
