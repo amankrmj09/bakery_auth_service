@@ -7,7 +7,7 @@ import com.blubugtech.bakery_auth_service.exception.AuthException;
 import com.blubugtech.bakery_auth_service.security.JwtService;
 import com.blubugtech.bakery_auth_service.service.dashboard.DashboardStatisticsService;
 import com.blubugtech.bakery_auth_service.service.user.UserService;
-import com.blubugtech.common.dto.MessageResponseDto;
+import com.blubugtech.common.contract.feign.MessageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -146,7 +146,7 @@ public class UserController {
     @PutMapping("/admin/{userId}/role")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update user role (Admin)")
-    public ResponseEntity<MessageResponseDto> updateUserRole(
+    public ResponseEntity<MessageResponse> updateUserRole(
             @PathVariable UUID userId,
             @RequestBody Map<String, String> request) {
 
@@ -161,14 +161,14 @@ public class UserController {
         userService.updateUserRole(userId, role);
 
         logger.info("User role updated to {} for user ID: {}", role, userId);
-        return ResponseEntity.ok(new MessageResponseDto("User role updated successfully"));
+        return ResponseEntity.ok(new MessageResponse("User role updated successfully"));
     }
 
     // Update user status (Admin only)
     @PutMapping("/admin/{userId}/status")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update user status (Admin)")
-    public ResponseEntity<MessageResponseDto> updateUserStatus(
+    public ResponseEntity<MessageResponse> updateUserStatus(
             @PathVariable UUID userId,
             @RequestBody Map<String, String> request) {
 
@@ -183,33 +183,33 @@ public class UserController {
         userService.updateUserStatus(userId, status);
 
         logger.info("User status updated to {} for user ID: {}", status, userId);
-        return ResponseEntity.ok(new MessageResponseDto("User status updated successfully"));
+        return ResponseEntity.ok(new MessageResponse("User status updated successfully"));
     }
 
     // Unlock user account (Admin only)
     @PostMapping("/admin/{userId}/unlock")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Unlock user account (Admin)")
-    public ResponseEntity<MessageResponseDto> unlockUserAccount(@PathVariable UUID userId) throws AuthException {
+    public ResponseEntity<MessageResponse> unlockUserAccount(@PathVariable UUID userId) throws AuthException {
         logger.info("Unlock user account request received (admin) for user ID: {}", userId);
 
         userService.unlockAccount(userId);
 
         logger.info("User account unlocked for user ID: {}", userId);
-        return ResponseEntity.ok(new MessageResponseDto("User account unlocked successfully"));
+        return ResponseEntity.ok(new MessageResponse("User account unlocked successfully"));
     }
 
     // Delete user (Admin only)
     @DeleteMapping("/admin/{userId}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete user (Admin)")
-    public ResponseEntity<MessageResponseDto> deleteUser(@PathVariable UUID userId) throws AuthException {
+    public ResponseEntity<MessageResponse> deleteUser(@PathVariable UUID userId) throws AuthException {
         logger.info("Delete user request received (admin) for user ID: {}", userId);
 
         userService.deleteUser(userId);
 
         logger.info("User deleted for user ID: {}", userId);
-        return ResponseEntity.ok(new MessageResponseDto("User deleted successfully"));
+        return ResponseEntity.ok(new MessageResponse("User deleted successfully"));
     }
 
     // Get user statistics (Admin only)

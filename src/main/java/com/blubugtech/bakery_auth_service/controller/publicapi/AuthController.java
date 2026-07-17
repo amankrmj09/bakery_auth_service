@@ -17,11 +17,11 @@ import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 
-import com.blubugtech.common.dto.MessageResponseDto;
-import com.blubugtech.common.dto.HealthResponseDto;
+import com.blubugtech.common.contract.feign.MessageResponse;
+import com.blubugtech.common.contract.feign.HealthResponse;
 import com.blubugtech.bakery_auth_service.dto.auth.TokenValidationResponse;
-import com.blubugtech.common.exception.UnauthenticatedException;
-import com.blubugtech.common.exception.InvalidTokenException;
+import com.blubugtech.common.exception.security.UnauthenticatedException;
+import com.blubugtech.common.exception.security.InvalidTokenException;
 import java.util.Map;
 import java.util.UUID;
 
@@ -174,7 +174,7 @@ public class AuthController {
     @PostMapping("/logout")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Logout user")
-    public ResponseEntity<MessageResponseDto> logout(HttpServletRequest request) {
+    public ResponseEntity<MessageResponse> logout(HttpServletRequest request) {
         logger.info("Logout request received");
 
         String authHeader = request.getHeader("Authorization");
@@ -185,14 +185,14 @@ public class AuthController {
         }
 
         logger.info("Logout processed successfully");
-        return ResponseEntity.ok(new MessageResponseDto("Logout successful"));
+        return ResponseEntity.ok(new MessageResponse("Logout successful"));
     }
 
     // Change Password
     @PostMapping("/change-password")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Change user password")
-    public ResponseEntity<MessageResponseDto> changePassword(
+    public ResponseEntity<MessageResponse> changePassword(
             @RequestBody Map<String, String> request,
             HttpServletRequest httpRequest) throws AuthException {
 
@@ -216,27 +216,27 @@ public class AuthController {
         authService.changePassword(userId, currentPassword, newPassword);
 
         logger.info("Password change successful for user ID: {}", userId);
-        return ResponseEntity.ok(new MessageResponseDto("Password changed successfully"));
+        return ResponseEntity.ok(new MessageResponse("Password changed successfully"));
     }
 
     // Verify Email
     @PostMapping("/verify-email/{userId}")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Verify user email")
-    public ResponseEntity<MessageResponseDto> verifyEmail(@PathVariable UUID userId) throws AuthException {
+    public ResponseEntity<MessageResponse> verifyEmail(@PathVariable UUID userId) throws AuthException {
         logger.info("Email verification request received for user ID: {}", userId);
 
         authService.verifyEmail(userId);
 
         logger.info("Email verification successful for user ID: {}", userId);
-        return ResponseEntity.ok(new MessageResponseDto("Email verified successfully"));
+        return ResponseEntity.ok(new MessageResponse("Email verified successfully"));
     }
 
     // Health check endpoint
     @GetMapping("/health")
     @Operation(summary = "Check service health")
-    public ResponseEntity<HealthResponseDto> health() {
-        return ResponseEntity.ok(new HealthResponseDto("UP", "bakery-auth-service"));
+    public ResponseEntity<HealthResponse> health() {
+        return ResponseEntity.ok(new HealthResponse("UP", "bakery-auth-service"));
     }
 
     // Get current user info (from token)

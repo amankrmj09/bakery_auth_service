@@ -62,7 +62,7 @@ public class AuthServiceImpl implements AuthService {
             
             // Send welcome notification via Kafka
             try {
-                UserEvent event = UserEvent.builder()
+                com.blubugtech.common.contract.messaging.UserPayload payload = com.blubugtech.common.contract.messaging.UserPayload.builder()
                         .userId(user.getId())
                         .email(user.getEmail())
                         .firstName(user.getFirstName())
@@ -70,6 +70,11 @@ public class AuthServiceImpl implements AuthService {
                         .action("REGISTERED")
                         .timestamp(java.time.LocalDateTime.now())
                         .build();
+                UserEvent event = new UserEvent();
+                event.setEventId(java.util.UUID.randomUUID().toString());
+                event.setEventType("USER_REGISTERED");
+                event.setTimestamp(java.time.Instant.now());
+                event.setPayload(payload);
                 kafkaTemplate.send(userEventsTopic, user.getId().toString(), event);
                 logger.info("Published UserEvent for registered user: {}", user.getId());
             } catch (Exception ex) {
@@ -263,7 +268,7 @@ public class AuthServiceImpl implements AuthService {
                     Map<String, Object> notificationReq = new HashMap<>();
                     notificationReq.put("type", "EMAIL");
                     notificationReq.put("recipientEmail", user.getEmail());
-                    UserEvent event = UserEvent.builder()
+                    com.blubugtech.common.contract.messaging.UserPayload payload = com.blubugtech.common.contract.messaging.UserPayload.builder()
                             .userId(user.getId())
                             .email(user.getEmail())
                             .firstName(user.getFirstName())
@@ -271,6 +276,11 @@ public class AuthServiceImpl implements AuthService {
                             .action("PASSWORD_CHANGED")
                             .timestamp(java.time.LocalDateTime.now())
                             .build();
+                    UserEvent event = new UserEvent();
+                    event.setEventId(java.util.UUID.randomUUID().toString());
+                    event.setEventType("PASSWORD_CHANGED");
+                    event.setTimestamp(java.time.Instant.now());
+                    event.setPayload(payload);
                     kafkaTemplate.send(userEventsTopic, user.getId().toString(), event);
                     logger.info("Published UserEvent for password change: {}", user.getId());
                 }
