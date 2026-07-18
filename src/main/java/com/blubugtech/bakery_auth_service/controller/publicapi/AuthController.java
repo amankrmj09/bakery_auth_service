@@ -232,12 +232,7 @@ public class AuthController {
         return ResponseEntity.ok(new MessageResponse("Email verified successfully"));
     }
 
-    // Health check endpoint
-    @GetMapping("/health")
-    @Operation(summary = "Check service health")
-    public ResponseEntity<HealthResponse> health() {
-        return ResponseEntity.ok(new HealthResponse("UP", "bakery-auth-service"));
-    }
+
 
     // Get current user info (from token)
     @GetMapping("/me")

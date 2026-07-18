@@ -4,6 +4,29 @@ This document provides a comprehensive reference for the API endpoints exposed b
 
 ---
 
+## System & Monitoring (Actuator)
+**Base Path:** `/actuator`
+
+Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
+
+### 1. Health Check
+- **Method:** `GET`
+- **Path:** `/actuator/health`
+- **Type of API:** `Public`
+- **Response Body:** `200 OK` (Standard Actuator Health JSON)
+
+### 2. Service Info
+- **Method:** `GET`
+- **Path:** `/actuator/info`
+- **Type of API:** `Public`
+- **Response Body:** `200 OK` (Standard Actuator Info JSON)
+
+### 3. Prometheus Metrics
+- **Method:** `GET`
+- **Path:** `/actuator/prometheus`
+- **Type of API:** `Public`
+- **Response Body:** `200 OK` (Prometheus Text Format)
+
 ## Auth Controller
 **Base Path:** `/api/auth`
 
@@ -141,7 +164,7 @@ This document provides a comprehensive reference for the API endpoints exposed b
 ### 9. Verify Email
 - **Method:** `POST`
 - **Path:** `/api/auth/verify-email/{userId}`
-- **Type of API:** `Public`
+- **Type of API:** `User`
 - **Request Body:** None
 - **Response Body:** `200 OK`
   ```json
@@ -150,21 +173,7 @@ This document provides a comprehensive reference for the API endpoints exposed b
   }
   ```
 
-### 10. Health Check
-- **Method:** `GET`
-- **Path:** `/api/auth/health`
-- **Type of API:** `Public`
-- **Request Body:** None
-- **Response Body:** `200 OK`
-  ```json
-  {
-    "status": "UP",
-    "service": "bakery-auth-service",
-    "timestamp": "2023-01-01T00:00:00"
-  }
-  ```
-
-### 11. Get Current User Info
+### 10. Get Current User Info
 - **Method:** `GET`
 - **Path:** `/api/auth/me`
 - **Type of API:** `User`
@@ -187,21 +196,21 @@ This document provides a comprehensive reference for the API endpoints exposed b
 ### 1. Increment Orders
 - **Method:** `POST`
 - **Path:** `/api/users/internal/stats/increment-orders`
-- **Type of API:** `Admin`
+- **Type of API:** `System (requires X-User-Role: SYSTEM header)`
 - **Request Body:** None
 - **Response Body:** `200 OK`
 
 ### 2. Decrement Orders
 - **Method:** `POST`
 - **Path:** `/api/users/internal/stats/decrement-orders`
-- **Type of API:** `Admin`
+- **Type of API:** `System (requires X-User-Role: SYSTEM header)`
 - **Request Body:** None
 - **Response Body:** `200 OK`
 
 ### 3. Add Revenue
 - **Method:** `POST`
 - **Path:** `/api/users/internal/stats/add-revenue`
-- **Type of API:** `Admin`
+- **Type of API:** `System (requires X-User-Role: SYSTEM header)`
 - **Request Body:**
   ```json
   {
