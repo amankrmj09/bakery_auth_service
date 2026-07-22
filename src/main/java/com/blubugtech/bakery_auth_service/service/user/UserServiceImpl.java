@@ -161,10 +161,17 @@ public class UserServiceImpl implements UserService {
             throw new AuthException("Invalid current password");
         }
 
-        // Update password
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
         logger.info("Password updated for user ID: {}", userId);
+    }
+
+    public void resetPassword(UUID userId, String newPassword) throws AuthException {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AuthException("User not found"));
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        logger.info("Password reset for user ID: {}", userId);
     }
 
     // Record successful login

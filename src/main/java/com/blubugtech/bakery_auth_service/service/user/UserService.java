@@ -18,6 +18,7 @@ public interface UserService {
     UserResponse getUserProfile(UUID userId) throws AuthException;
     UserResponse updateUserProfile(UUID userId, RegisterRequest request) throws AuthException;
     void updatePassword(UUID userId, String oldPassword, String newPassword) throws AuthException;
+    void resetPassword(UUID userId, String newPassword) throws AuthException;
     void recordSuccessfulLogin(UUID userId) throws AuthException;
     void recordFailedLogin(String usernameOrEmail);
     boolean isAccountLocked(String usernameOrEmail);

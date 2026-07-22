@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import com.blubugtech.bakery_auth_service.dto.auth.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 @Transactional
@@ -36,13 +38,18 @@ public class AuthServiceImpl implements AuthService {
 
     private final org.springframework.security.authentication.AuthenticationManager authenticationManager;
 
+    private final AuthOtpService authOtpService;
+    private final ObjectMapper objectMapper;
+
     @org.springframework.beans.factory.annotation.Value("${kafka.topic.user-events:user-events}")
     private String userEventsTopic;
-    public AuthServiceImpl(UserService userService, JwtService jwtService, KafkaTemplate<String, Object> kafkaTemplate, org.springframework.security.authentication.AuthenticationManager authenticationManager) {
+    public AuthServiceImpl(UserService userService, JwtService jwtService, KafkaTemplate<String, Object> kafkaTemplate, org.springframework.security.authentication.AuthenticationManager authenticationManager, AuthOtpService authOtpService, ObjectMapper objectMapper) {
         this.userService = userService;
         this.jwtService = jwtService;
         this.kafkaTemplate = kafkaTemplate;
         this.authenticationManager = authenticationManager;
+        this.authOtpService = authOtpService;
+        this.objectMapper = objectMapper;
     }
 
     // User registration
@@ -138,6 +145,92 @@ public class AuthServiceImpl implements AuthService {
             logger.error("Unexpected error during login for user: {} - {}", request.getUsernameOrEmail(), e.getMessage());
             throw new AuthException("Login failed due to an unexpected error");
         }
+    }
+
+    public String initiateRegister(RegisterRequest request) throws AuthException {
+        logger.info("Initiating OTP registration for: {}", request.getEmail());
+        try {
+            if (userService.findByUsername(request.getUsername()).isPresent() || userService.findByEmail(request.getEmail()).isPresent()) {
+                throw new AuthException("User already exists");
+            }
+            String requestJson = objectMapper.writeValueAsString(request);
+            return authOtpService.generateAndSaveRegisterOtp(request.getEmail(), requestJson);
+        } catch (Exception e) {
+            throw new AuthException("Failed to initiate registration");
+        }
+    }
+
+    public AuthResponse verifyRegister(RegisterVerifyRequest request) throws AuthException {
+        try {
+            String requestJson = authOtpService.verifyRegisterOtp(request.getEmail(), request.getOtp());
+            if (requestJson == null) {
+                throw new InvalidTokenException("Invalid or expired OTP");
+            }
+            RegisterRequest registerRequest = objectMapper.readValue(requestJson, RegisterRequest.class);
+            return register(registerRequest); // Re-use existing register flow
+        } catch (Exception e) {
+            throw new AuthException("OTP Verification failed");
+        }
+    }
+
+    public String initiateLogin(LoginRequest request) throws AuthException {
+        try {
+            if (userService.isAccountLocked(request.getUsernameOrEmail())) {
+                throw new AccountLockedException("Account locked");
+            }
+            // Verify password for 2FA
+            org.springframework.security.core.Authentication authentication;
+            try {
+                authentication = authenticationManager.authenticate(
+                        new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                                request.getUsernameOrEmail(), request.getPassword()
+                        )
+                );
+            } catch (org.springframework.security.core.AuthenticationException e) {
+                userService.recordFailedLogin(request.getUsernameOrEmail());
+                throw new InvalidCredentialsException("Invalid credentials");
+            }
+            com.blubugtech.bakery_auth_service.security.CustomUserDetails userDetails = 
+                (com.blubugtech.bakery_auth_service.security.CustomUserDetails) authentication.getPrincipal();
+            
+            return authOtpService.generateAndSaveLoginOtp(userDetails.getUser().getEmail());
+        } catch (AuthException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AuthException("Failed to initiate login");
+        }
+    }
+
+    public AuthResponse verifyLogin(LoginVerifyRequest request) throws AuthException {
+        if (!authOtpService.verifyLoginOtp(request.getEmail(), request.getOtp())) {
+            throw new InvalidTokenException("Invalid or expired OTP");
+        }
+        Optional<User> userOptional = userService.findByEmail(request.getEmail());
+        if (userOptional.isEmpty()) throw new UserNotFoundException("User not found");
+        User user = userOptional.get();
+        userService.recordSuccessfulLogin(user.getId());
+        String accessToken = jwtService.generateAccessToken(user);
+        String refreshToken = jwtService.generateRefreshToken(user);
+        return AuthResponse.of(accessToken, refreshToken, jwtService.getExpirationTime(), user);
+    }
+
+    public String initiateForgotPassword(ForgotPasswordRequest request) throws AuthException {
+        Optional<User> userOpt = userService.findByEmail(request.getEmail());
+        if (userOpt.isEmpty()) throw new UserNotFoundException("User not found");
+        return authOtpService.generateAndSaveResetOtp(request.getEmail());
+    }
+
+    public void resetPassword(ResetPasswordRequest request) throws AuthException {
+        if (!authOtpService.verifyResetOtp(request.getEmail(), request.getOtp())) {
+            throw new InvalidTokenException("Invalid or expired OTP");
+        }
+        Optional<User> userOpt = userService.findByEmail(request.getEmail());
+        if (userOpt.isEmpty()) throw new UserNotFoundException("User not found");
+        // For reset, we update without requiring current password. We need a method in userService for direct password update or use existing if it doesn't strictly check old password. 
+        // We will call the repo directly or add a direct update method to userService.
+        User user = userOpt.get();
+        // Since we are inside auth service, we can use userService.resetPassword (assuming we create it) or just update it via another means.
+        userService.resetPassword(user.getId(), request.getNewPassword());
     }
 
     // Refresh token

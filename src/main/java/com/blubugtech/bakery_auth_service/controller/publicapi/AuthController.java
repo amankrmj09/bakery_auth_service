@@ -1,8 +1,6 @@
 package com.blubugtech.bakery_auth_service.controller.publicapi;
 
-import com.blubugtech.bakery_auth_service.dto.auth.AuthResponse;
-import com.blubugtech.bakery_auth_service.dto.auth.LoginRequest;
-import com.blubugtech.bakery_auth_service.dto.auth.RegisterRequest;
+import com.blubugtech.bakery_auth_service.dto.auth.*;
 import com.blubugtech.bakery_auth_service.exception.AuthException;
 import com.blubugtech.bakery_auth_service.service.auth.AuthService;
 import com.blubugtech.bakery_auth_service.security.JwtService;
@@ -18,8 +16,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 
 import com.blubugtech.common.contract.feign.MessageResponse;
-import com.blubugtech.common.contract.feign.HealthResponse;
-import com.blubugtech.bakery_auth_service.dto.auth.TokenValidationResponse;
 import com.blubugtech.common.exception.security.UnauthenticatedException;
 import com.blubugtech.common.exception.security.InvalidTokenException;
 import java.util.Map;
@@ -28,42 +24,71 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/auth")
 @Tag(name = "Authentication", description = "Endpoints for user authentication and authorization")
-
 public class AuthController {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
-    final private AuthService authService;
-
-    final private JwtService jwtService;
+    private final AuthService authService;
+    private final JwtService jwtService;
 
     public AuthController(AuthService authService, JwtService jwtService) {
         this.authService = authService;
         this.jwtService = jwtService;
     }
 
-    // User Registration
+    // User Registration - Step 1: Initiate
     @PostMapping("/register")
-    @Operation(summary = "Register a new user")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) throws AuthException {
-        logger.info("Registration request received for username: {}", request.getUsername());
+    @Operation(summary = "Initiate registration for a new user")
+    public ResponseEntity<MessageResponse> initiateRegister(@Valid @RequestBody RegisterRequest request) throws AuthException {
+        logger.info("Registration initiation request received for username: {}", request.getUsername());
+        String otp = authService.initiateRegister(request);
+        // Only return OTP in dev environments for learning purposes
+        return ResponseEntity.ok(new MessageResponse("OTP Sent. Mock OTP: " + otp));
+    }
 
-        AuthResponse response = authService.register(request);
-
-        logger.info("Registration successful for username: {}", request.getUsername());
+    // User Registration - Step 2: Verify
+    @PostMapping("/register/verify")
+    @Operation(summary = "Verify OTP to complete registration")
+    public ResponseEntity<AuthResponse> verifyRegister(@Valid @RequestBody RegisterVerifyRequest request) throws AuthException {
+        logger.info("Registration verification request received for email: {}", request.getEmail());
+        AuthResponse response = authService.verifyRegister(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    // User Login
+    // User Login - Step 1: Initiate
     @PostMapping("/login")
-    @Operation(summary = "Login and get tokens")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) throws AuthException {
+    @Operation(summary = "Login and initiate 2FA")
+    public ResponseEntity<MessageResponse> login(@Valid @RequestBody LoginRequest request) throws AuthException {
         logger.info("Login request received for user: {}", request.getUsernameOrEmail());
+        String otp = authService.initiateLogin(request);
+        return ResponseEntity.ok(new MessageResponse("OTP Sent. Mock OTP: " + otp));
+    }
 
-        AuthResponse response = authService.login(request);
-
-        logger.info("Login successful for user: {}", request.getUsernameOrEmail());
+    // User Login - Step 2: Verify
+    @PostMapping("/login/verify")
+    @Operation(summary = "Verify OTP to complete login")
+    public ResponseEntity<AuthResponse> verifyLogin(@Valid @RequestBody LoginVerifyRequest request) throws AuthException {
+        logger.info("Login verification request received for email: {}", request.getEmail());
+        AuthResponse response = authService.verifyLogin(request);
         return ResponseEntity.ok(response);
+    }
+
+    // Forgot Password - Step 1: Initiate
+    @PostMapping("/forgot-password")
+    @Operation(summary = "Initiate password reset")
+    public ResponseEntity<MessageResponse> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) throws AuthException {
+        logger.info("Forgot password request received for email: {}", request.getEmail());
+        String otp = authService.initiateForgotPassword(request);
+        return ResponseEntity.ok(new MessageResponse("OTP Sent. Mock OTP: " + otp));
+    }
+
+    // Forgot Password - Step 2: Reset
+    @PostMapping("/forgot-password/reset")
+    @Operation(summary = "Reset password using OTP")
+    public ResponseEntity<MessageResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) throws AuthException {
+        logger.info("Reset password request received for email: {}", request.getEmail());
+        authService.resetPassword(request);
+        return ResponseEntity.ok(new MessageResponse("Password reset successfully"));
     }
 
     // Refresh Token
@@ -83,24 +108,6 @@ public class AuthController {
         AuthResponse response = authService.refreshToken(refreshToken);
 
         logger.info("Token refresh successful");
-        return ResponseEntity.ok(response);
-    }
-
-    // Alternative refresh token endpoint (from request body)
-    @PostMapping("/refresh-token")
-    @Operation(summary = "Refresh authentication token from request body")
-    public ResponseEntity<AuthResponse> refreshTokenFromBody(@RequestBody Map<String, String> request) throws AuthException {
-        logger.info("Token refresh request received (from body)");
-
-        String refreshToken = request.get("refreshToken");
-        if (refreshToken == null || refreshToken.trim().isEmpty()) {
-            logger.warn("No refresh token provided in request body");
-            return ResponseEntity.badRequest().build();
-        }
-
-        AuthResponse response = authService.refreshToken(refreshToken);
-
-        logger.info("Token refresh successful (from body)");
         return ResponseEntity.ok(response);
     }
 
@@ -130,41 +137,6 @@ public class AuthController {
             response.setUsername(validation.getUsername());
             response.setEmail(validation.getEmail());
             response.setRole(validation.getRole());
-            logger.debug("Token validation successful for user: {}", validation.getUsername());
-        } else {
-            logger.debug("Token validation failed: {}", validation.getMessage());
-        }
-
-        return ResponseEntity.ok(response);
-    }
-
-    // Alternative validate token endpoint (from request body)
-    @PostMapping("/validate-token")
-    @Operation(summary = "Validate token from body (for internal microservice use)")
-    public ResponseEntity<TokenValidationResponse> validateTokenFromBody(@RequestBody Map<String, String> request) {
-        logger.debug("Token validation request received (from body)");
-
-        String token = request.get("token");
-        if (token == null || token.trim().isEmpty()) {
-            logger.warn("No token provided for validation");
-            throw new UnauthenticatedException("No token provided");
-        }
-
-        TokenValidationResponse validation = authService.validateToken(token);
-
-        TokenValidationResponse response = TokenValidationResponse.builder()
-                .valid(validation.isValid())
-                .message(validation.getMessage())
-                .build();
-
-        if (validation.isValid()) {
-            response.setUserId(validation.getUserId());
-            response.setUsername(validation.getUsername());
-            response.setEmail(validation.getEmail());
-            response.setRole(validation.getRole());
-            logger.debug("Token validation successful for user: {}", validation.getUsername());
-        } else {
-            logger.debug("Token validation failed: {}", validation.getMessage());
         }
 
         return ResponseEntity.ok(response);
@@ -225,14 +197,10 @@ public class AuthController {
     @Operation(summary = "Verify user email")
     public ResponseEntity<MessageResponse> verifyEmail(@PathVariable UUID userId) throws AuthException {
         logger.info("Email verification request received for user ID: {}", userId);
-
         authService.verifyEmail(userId);
-
         logger.info("Email verification successful for user ID: {}", userId);
         return ResponseEntity.ok(new MessageResponse("Email verified successfully"));
     }
-
-
 
     // Get current user info (from token)
     @GetMapping("/me")
