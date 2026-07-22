@@ -15,6 +15,7 @@ public interface UserService {
     Optional<User> findByUsernameOrEmail(String usernameOrEmail);
     Optional<User> findById(UUID userId);
     Optional<User> findByUsername(String username);
+    Optional<User> findByEmail(String email);
     UserResponse getUserProfile(UUID userId) throws AuthException;
     UserResponse updateUserProfile(UUID userId, RegisterRequest request) throws AuthException;
     void updatePassword(UUID userId, String oldPassword, String newPassword) throws AuthException;

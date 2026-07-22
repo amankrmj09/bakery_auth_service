@@ -102,6 +102,10 @@ public class UserServiceImpl implements UserService {
         return userRepository.findByUsername(username);
     }
 
+    public Optional<User> findByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+
     // Get user profile
     public UserResponse getUserProfile(UUID userId) throws AuthException {
         User user = userRepository.findById(userId)
