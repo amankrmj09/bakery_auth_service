@@ -5,6 +5,9 @@ import com.blubugtech.bakery_auth_service.dto.user.UserResponse;
 import com.blubugtech.bakery_auth_service.entity.User;
 import com.blubugtech.bakery_auth_service.exception.AuthException;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,9 +27,9 @@ public interface UserService {
     void recordFailedLogin(String usernameOrEmail);
     boolean isAccountLocked(String usernameOrEmail);
     void unlockAccount(UUID userId) throws AuthException;
-    List<UserResponse> getAllUsers();
-    List<UserResponse> searchUsers(String searchTerm);
-    List<UserResponse> getUsersByRole(User.Role role);
+    Page<UserResponse> getAllUsers(Pageable pageable);
+    Page<UserResponse> searchUsers(String searchTerm, Pageable pageable);
+    Page<UserResponse> getUsersByRole(User.Role role, Pageable pageable);
     void updateUserRole(UUID userId, User.Role newRole) throws AuthException;
     void updateUserStatus(UUID userId, User.UserStatus status) throws AuthException;
     void verifyEmail(UUID userId) throws AuthException;

@@ -13,6 +13,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -232,24 +234,21 @@ public class UserServiceImpl implements UserService {
     }
 
     // Get all users (admin function)
-    public List<UserResponse> getAllUsers() {
-        return userRepository.findAll().stream()
-                .map(UserResponse::from)
-                .collect(Collectors.toList());
+    public Page<UserResponse> getAllUsers(Pageable pageable) {
+        return userRepository.findAll(pageable)
+                .map(UserResponse::from);
     }
 
     // Search users
-    public List<UserResponse> searchUsers(String searchTerm) {
-        return userRepository.searchUsers(searchTerm).stream()
-                .map(UserResponse::from)
-                .collect(Collectors.toList());
+    public Page<UserResponse> searchUsers(String searchTerm, Pageable pageable) {
+        return userRepository.searchUsers(searchTerm, pageable)
+                .map(UserResponse::from);
     }
 
     // Get users by role
-    public List<UserResponse> getUsersByRole(User.Role role) {
-        return userRepository.findByRole(role).stream()
-                .map(UserResponse::from)
-                .collect(Collectors.toList());
+    public Page<UserResponse> getUsersByRole(User.Role role, Pageable pageable) {
+        return userRepository.findByRole(role, pageable)
+                .map(UserResponse::from);
     }
 
     // Update user role (admin function)

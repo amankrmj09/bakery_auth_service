@@ -8,6 +8,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -35,7 +37,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     boolean existsByPhone(String phone);
 
     // Find users by role
-    List<User> findByRole(User.Role role);
+    Page<User> findByRole(User.Role role, Pageable pageable);
 
     // Find users by status
     List<User> findByStatus(User.UserStatus status);
@@ -83,7 +85,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
             "LOWER(u.lastName) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
             "LOWER(u.username) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
             "LOWER(u.email) LIKE LOWER(CONCAT('%', :searchTerm, '%'))")
-    List<User> searchUsers(@Param("searchTerm") String searchTerm);
+    Page<User> searchUsers(@Param("searchTerm") String searchTerm, Pageable pageable);
 
     // Count users by role
     @Query("SELECT COUNT(u) FROM User u WHERE u.role = :role")

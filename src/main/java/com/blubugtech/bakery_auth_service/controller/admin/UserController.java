@@ -16,6 +16,11 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -106,40 +111,66 @@ public class UserController {
     @GetMapping("/admin/all")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get all users (Admin)")
-    public ResponseEntity<List<UserResponse>> getAllUsers() {
+    public ResponseEntity<PagedModel<UserResponse>> getAllUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDir) {
+            
         logger.info("Get all users request received (admin)");
 
-        List<UserResponse> users = userService.getAllUsers();
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
 
-        logger.info("All users retrieved, count: {}", users.size());
-        return ResponseEntity.ok(users);
+        Page<UserResponse> users = userService.getAllUsers(pageable);
+
+        logger.info("All users retrieved, count: {}", users.getContent().size());
+        return ResponseEntity.ok(new PagedModel<>(users));
     }
 
     // Search users (Admin only)
     @GetMapping("/admin/search")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Search users by query (Admin)")
-    public ResponseEntity<List<UserResponse>> searchUsers(@RequestParam String query) {
+    public ResponseEntity<PagedModel<UserResponse>> searchUsers(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDir) {
+            
         logger.info("Search users request received (admin) with query: {}", query);
 
-        List<UserResponse> users = userService.searchUsers(query);
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
 
-        logger.info("User search completed, results: {}", users.size());
-        return ResponseEntity.ok(users);
+        Page<UserResponse> users = userService.searchUsers(query, pageable);
+
+        logger.info("User search completed, results: {}", users.getContent().size());
+        return ResponseEntity.ok(new PagedModel<>(users));
     }
 
     // Get users by role (Admin only)
     @GetMapping("/admin/role/{role}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get users by role (Admin)")
-    public ResponseEntity<List<UserResponse>> getUsersByRole(@PathVariable String role) {
+    public ResponseEntity<PagedModel<UserResponse>> getUsersByRole(
+            @PathVariable String role,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDir) {
+            
         logger.info("Get users by role request received (admin) for role: {}", role);
 
-        User.Role userRole = User.Role.valueOf(role.toUpperCase());
-        List<UserResponse> users = userService.getUsersByRole(userRole);
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
 
-        logger.info("Users by role retrieved, count: {}", users.size());
-        return ResponseEntity.ok(users);
+        User.Role userRole = User.Role.valueOf(role.toUpperCase());
+        Page<UserResponse> users = userService.getUsersByRole(userRole, pageable);
+
+        logger.info("Users by role retrieved, count: {}", users.getContent().size());
+        return ResponseEntity.ok(new PagedModel<>(users));
     }
 
     // Update user role (Admin only)
