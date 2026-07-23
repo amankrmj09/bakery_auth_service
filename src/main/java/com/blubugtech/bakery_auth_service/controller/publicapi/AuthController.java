@@ -68,7 +68,7 @@ public class AuthController {
     @PostMapping("/login/verify")
     @Operation(summary = "Verify OTP to complete login")
     public ResponseEntity<AuthResponse> verifyLogin(@Valid @RequestBody LoginVerifyRequest request) throws AuthException {
-        logger.info("Login verification request received for email: {}", request.getEmail());
+        logger.info("Login verification request received for: {}", request.getUsernameOrEmail());
         AuthResponse response = authService.verifyLogin(request);
         return ResponseEntity.ok(response);
     }

@@ -206,12 +206,17 @@ public class AuthServiceImpl implements AuthService {
     }
 
     public AuthResponse verifyLogin(LoginVerifyRequest request) throws AuthException {
-        if (!authOtpService.verifyLoginOtp(request.getEmail(), request.getOtp())) {
-            throw new InvalidTokenException("Invalid or expired OTP");
+        Optional<User> userOptional = userService.findByUsername(request.getUsernameOrEmail());
+        if (userOptional.isEmpty()) {
+            userOptional = userService.findByEmail(request.getUsernameOrEmail());
         }
-        Optional<User> userOptional = userService.findByEmail(request.getEmail());
         if (userOptional.isEmpty()) throw new UserNotFoundException("User not found");
         User user = userOptional.get();
+
+        if (!authOtpService.verifyLoginOtp(user.getEmail(), request.getOtp())) {
+            throw new InvalidTokenException("Invalid or expired OTP");
+        }
+
         userService.recordSuccessfulLogin(user.getId());
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
