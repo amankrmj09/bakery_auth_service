@@ -154,7 +154,9 @@ public class AuthServiceImpl implements AuthService {
                 throw new AuthException("User already exists");
             }
             String requestJson = objectMapper.writeValueAsString(request);
-            return authOtpService.generateAndSaveRegisterOtp(request.getEmail(), requestJson);
+            String otp = authOtpService.generateAndSaveRegisterOtp(request.getEmail(), requestJson);
+            sendOtpEvent(null, request.getEmail(), request.getFirstName(), request.getLastName(), otp);
+            return otp;
         } catch (Exception e) {
             throw new AuthException("Failed to initiate registration");
         }
@@ -192,8 +194,10 @@ public class AuthServiceImpl implements AuthService {
             }
             com.blubugtech.bakery_auth_service.security.CustomUserDetails userDetails = 
                 (com.blubugtech.bakery_auth_service.security.CustomUserDetails) authentication.getPrincipal();
-            
-            return authOtpService.generateAndSaveLoginOtp(userDetails.getUser().getEmail());
+            User user = userDetails.getUser();
+            String otp = authOtpService.generateAndSaveLoginOtp(user.getEmail());
+            sendOtpEvent(user.getId(), user.getEmail(), user.getFirstName(), user.getLastName(), otp);
+            return otp;
         } catch (AuthException e) {
             throw e;
         } catch (Exception e) {
@@ -217,7 +221,10 @@ public class AuthServiceImpl implements AuthService {
     public String initiateForgotPassword(ForgotPasswordRequest request) throws AuthException {
         Optional<User> userOpt = userService.findByEmail(request.getEmail());
         if (userOpt.isEmpty()) throw new UserNotFoundException("User not found");
-        return authOtpService.generateAndSaveResetOtp(request.getEmail());
+        User user = userOpt.get();
+        String otp = authOtpService.generateAndSaveResetOtp(request.getEmail());
+        sendOtpEvent(user.getId(), user.getEmail(), user.getFirstName(), user.getLastName(), otp);
+        return otp;
     }
 
     public void resetPassword(ResetPasswordRequest request) throws AuthException {
@@ -402,4 +409,29 @@ public class AuthServiceImpl implements AuthService {
     }
 
 
+    private void sendOtpEvent(UUID userId, String email, String firstName, String lastName, String otp) {
+        try {
+            com.blubugtech.common.contract.messaging.UserPayload payload = com.blubugtech.common.contract.messaging.UserPayload.builder()
+                    .userId(userId)
+                    .email(email)
+                    .firstName(firstName)
+                    .lastName(lastName)
+                    .action("OTP_REQUESTED")
+                    .otpCode(otp)
+                    .expiryMinutes(10) // Fixed matching AuthOtpService validity
+                    .timestamp(java.time.LocalDateTime.now())
+                    .build();
+            UserEvent event = new UserEvent();
+            event.setEventId(java.util.UUID.randomUUID().toString());
+            event.setEventType("OTP_REQUESTED");
+            event.setTimestamp(java.time.Instant.now());
+            event.setPayload(payload);
+            
+            String key = userId != null ? userId.toString() : email;
+            kafkaTemplate.send(userEventsTopic, key, event);
+            logger.info("Published UserEvent for OTP request to email: {}", email);
+        } catch (Exception ex) {
+            logger.error("Failed to publish OTP event: {}", ex.getMessage());
+        }
+    }
 }
