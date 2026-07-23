@@ -64,6 +64,19 @@ public class AuthController {
         return ResponseEntity.ok(new MessageResponse("OTP Sent. Mock OTP: " + otp));
     }
 
+    // Admin Login (1-step, no OTP for now)
+    @PostMapping("/admin/login")
+    @Operation(summary = "Direct login for admin without OTP")
+    public ResponseEntity<AuthResponse> adminLogin(@Valid @RequestBody LoginRequest request) throws AuthException {
+        logger.info("Admin login request received for user: {}", request.getUsernameOrEmail());
+        AuthResponse response = authService.login(request);
+        
+        if (response.getUser().getRole() != com.blubugtech.bakery_auth_service.entity.User.Role.ADMIN) {
+            throw new com.blubugtech.common.exception.security.AccessDeniedException("Access denied. Admin role required.");
+        }
+        return ResponseEntity.ok(response);
+    }
+
     // User Login - Step 2: Verify
     @PostMapping("/login/verify")
     @Operation(summary = "Verify OTP to complete login")
