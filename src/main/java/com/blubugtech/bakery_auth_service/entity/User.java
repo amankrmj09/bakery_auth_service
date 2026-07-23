@@ -55,6 +55,9 @@ public class User {
     @Column(columnDefinition = "TEXT")
     private String address;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<UserAddress> addresses = new java.util.ArrayList<>();
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role = Role.USER;

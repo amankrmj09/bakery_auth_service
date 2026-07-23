@@ -1,6 +1,7 @@
 package com.blubugtech.bakery_auth_service.service.user;
 
 import com.blubugtech.bakery_auth_service.dto.auth.RegisterRequest;
+import com.blubugtech.bakery_auth_service.dto.user.UserProfileUpdateRequest;
 import com.blubugtech.bakery_auth_service.dto.user.UserResponse;
 import com.blubugtech.bakery_auth_service.entity.User;
 import com.blubugtech.bakery_auth_service.exception.AuthException;
@@ -20,7 +21,7 @@ public interface UserService {
     Optional<User> findByUsername(String username);
     Optional<User> findByEmail(String email);
     UserResponse getUserProfile(UUID userId) throws AuthException;
-    UserResponse updateUserProfile(UUID userId, RegisterRequest request) throws AuthException;
+    UserResponse updateUserProfile(UUID userId, UserProfileUpdateRequest request) throws AuthException;
     void updatePassword(UUID userId, String oldPassword, String newPassword) throws AuthException;
     void resetPassword(UUID userId, String newPassword) throws AuthException;
     void recordSuccessfulLogin(UUID userId) throws AuthException;

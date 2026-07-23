@@ -1,6 +1,7 @@
 package com.blubugtech.bakery_auth_service.service.user;
 
 import com.blubugtech.bakery_auth_service.dto.auth.RegisterRequest;
+import com.blubugtech.bakery_auth_service.dto.user.UserProfileUpdateRequest;
 import com.blubugtech.bakery_auth_service.dto.user.UserResponse;
 import com.blubugtech.bakery_auth_service.mapper.UserMapper;
 import com.blubugtech.bakery_auth_service.service.dashboard.DashboardStatisticsService;
@@ -116,7 +117,7 @@ public class UserServiceImpl implements UserService {
     }
 
     // Update user profile
-    public UserResponse updateUserProfile(UUID userId, RegisterRequest request) throws AuthException {
+    public UserResponse updateUserProfile(UUID userId, UserProfileUpdateRequest request) throws AuthException {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AuthException("User not found"));
 

@@ -1,6 +1,7 @@
 package com.blubugtech.bakery_auth_service.controller.admin;
 
 import com.blubugtech.bakery_auth_service.dto.auth.RegisterRequest;
+import com.blubugtech.bakery_auth_service.dto.user.UserProfileUpdateRequest;
 import com.blubugtech.bakery_auth_service.dto.user.UserResponse;
 import com.blubugtech.bakery_auth_service.entity.User;
 import com.blubugtech.bakery_auth_service.exception.AuthException;
@@ -67,7 +68,7 @@ public class UserController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Update current user profile")
     public ResponseEntity<UserResponse> updateUserProfile(
-            @Valid @RequestBody RegisterRequest request,
+            @Valid @RequestBody UserProfileUpdateRequest request,
             HttpServletRequest httpRequest) throws AuthException {
 
         logger.info("Update user profile request received");
