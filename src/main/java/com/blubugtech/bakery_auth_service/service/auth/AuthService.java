@@ -15,10 +15,12 @@ public interface AuthService {
     AuthResponse register(RegisterRequest request) throws AuthException;
     String initiateRegister(RegisterRequest request) throws AuthException;
     AuthResponse verifyRegister(RegisterVerifyRequest request) throws AuthException;
+    String resendRegisterOtp(String email) throws AuthException;
     
     AuthResponse login(LoginRequest request) throws AuthException;
     String initiateLogin(LoginRequest request) throws AuthException;
     AuthResponse verifyLogin(LoginVerifyRequest request) throws AuthException;
+    String resendLoginOtp(String email) throws AuthException;
     
     String initiateForgotPassword(ForgotPasswordRequest request) throws AuthException;
     void resetPassword(ResetPasswordRequest request) throws AuthException;

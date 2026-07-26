@@ -176,6 +176,22 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
+    public String resendRegisterOtp(String email) throws AuthException {
+        logger.info("Resending OTP registration for: {}", email);
+        try {
+            String otp = authOtpService.resendRegisterOtp(email);
+            if (otp == null) {
+                throw new InvalidTokenException("Registration session expired or not found. Please register again.");
+            }
+            sendOtpEvent(null, email, null, null, null, otp);
+            return otp;
+        } catch (AuthException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AuthException("Failed to resend registration OTP");
+        }
+    }
+
     public String initiateLogin(LoginRequest request) throws AuthException {
         try {
             if (userService.isAccountLocked(request.getUsernameOrEmail())) {
@@ -222,6 +238,30 @@ public class AuthServiceImpl implements AuthService {
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
         return AuthResponse.of(accessToken, refreshToken, jwtService.getExpirationTime(), user);
+    }
+
+    public String resendLoginOtp(String usernameOrEmail) throws AuthException {
+        logger.info("Resending login OTP for: {}", usernameOrEmail);
+        try {
+            Optional<User> userOptional = userService.findByUsername(usernameOrEmail);
+            if (userOptional.isEmpty()) {
+                userOptional = userService.findByEmail(usernameOrEmail);
+            }
+            if (userOptional.isEmpty()) {
+                throw new UserNotFoundException("User not found");
+            }
+            User user = userOptional.get();
+            String otp = authOtpService.resendLoginOtp(user.getEmail());
+            if (otp == null) {
+                throw new InvalidTokenException("Login session expired or not found. Please login again.");
+            }
+            sendOtpEvent(user.getId(), user.getEmail(), user.getFirstName(), user.getLastName(), user.getPhone(), otp);
+            return otp;
+        } catch (AuthException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AuthException("Failed to resend login OTP");
+        }
     }
 
     public String initiateForgotPassword(ForgotPasswordRequest request) throws AuthException {

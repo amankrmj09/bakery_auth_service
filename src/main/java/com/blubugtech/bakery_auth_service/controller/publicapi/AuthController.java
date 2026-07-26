@@ -55,6 +55,15 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    // User Registration - Resend OTP
+    @PostMapping("/register/resend")
+    @Operation(summary = "Resend OTP for registration")
+    public ResponseEntity<MessageResponse> resendRegisterOtp(@Valid @RequestBody ResendOtpRequest request) throws AuthException {
+        logger.info("Resend registration OTP request received for email: {}", request.getEmail());
+        String otp = authService.resendRegisterOtp(request.getEmail());
+        return ResponseEntity.ok(new MessageResponse("OTP Sent. Mock OTP: " + otp));
+    }
+
     // User Login - Step 1: Initiate
     @PostMapping("/login")
     @Operation(summary = "Login and initiate 2FA")
@@ -84,6 +93,15 @@ public class AuthController {
         logger.info("Login verification request received for: {}", request.getUsernameOrEmail());
         AuthResponse response = authService.verifyLogin(request);
         return ResponseEntity.ok(response);
+    }
+
+    // User Login - Resend OTP
+    @PostMapping("/login/resend")
+    @Operation(summary = "Resend OTP for login")
+    public ResponseEntity<MessageResponse> resendLoginOtp(@Valid @RequestBody ResendOtpRequest request) throws AuthException {
+        logger.info("Resend login OTP request received for: {}", request.getEmail());
+        String otp = authService.resendLoginOtp(request.getEmail());
+        return ResponseEntity.ok(new MessageResponse("OTP Sent. Mock OTP: " + otp));
     }
 
     // Forgot Password - Step 1: Initiate

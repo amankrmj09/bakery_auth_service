@@ -41,6 +41,18 @@ public class AuthOtpService {
         return null;
     }
 
+    public String resendRegisterOtp(String email) {
+        String data = redisTemplate.opsForValue().get(REG_PREFIX + email);
+        if (data == null || data.length() <= 7) {
+            return null;
+        }
+        String requestJson = data.substring(7);
+        String newOtp = String.format("%06d", random.nextInt(999999));
+        redisTemplate.opsForValue().set(REG_PREFIX + email, newOtp + "|" + requestJson, OTP_VALIDITY_MINUTES, TimeUnit.MINUTES);
+        System.out.println("Resent Registration OTP for " + email + ": " + newOtp);
+        return newOtp;
+    }
+
     public String generateAndSaveLoginOtp(String email) {
         String otp = String.format("%06d", random.nextInt(999999));
         redisTemplate.opsForValue().set(LOGIN_PREFIX + email, otp, OTP_VALIDITY_MINUTES, TimeUnit.MINUTES);
@@ -55,6 +67,14 @@ public class AuthOtpService {
             return true;
         }
         return false;
+    }
+
+    public String resendLoginOtp(String email) {
+        String existingOtp = redisTemplate.opsForValue().get(LOGIN_PREFIX + email);
+        if (existingOtp == null) {
+            return null;
+        }
+        return generateAndSaveLoginOtp(email);
     }
 
     public String generateAndSaveResetOtp(String email) {
