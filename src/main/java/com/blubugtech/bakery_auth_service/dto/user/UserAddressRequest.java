@@ -15,7 +15,20 @@ public class UserAddressRequest {
 
     private String city;
 
-    private String zipCode;
+    private String state;
+
+    @com.fasterxml.jackson.annotation.JsonAlias("zipCode")
+    private String postalCode;
+
+    private String country;
 
     private Boolean isDefault;
+
+    public String getZipCode() {
+        return postalCode;
+    }
+
+    public void setZipCode(String zipCode) {
+        this.postalCode = zipCode;
+    }
 }
