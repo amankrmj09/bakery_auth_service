@@ -32,11 +32,25 @@ public class UserAddress {
     @Column(length = 100)
     private String city;
 
-    @Column(name = "zip_code", length = 20)
-    private String zipCode;
+    @Column(length = 100)
+    private String state;
+
+    @Column(name = "postal_code", length = 20)
+    private String postalCode;
+
+    @Column(length = 100)
+    private String country;
 
     @Column(name = "is_default")
     private Boolean isDefault = false;
+
+    public String getZipCode() {
+        return postalCode;
+    }
+
+    public void setZipCode(String zipCode) {
+        this.postalCode = zipCode;
+    }
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
