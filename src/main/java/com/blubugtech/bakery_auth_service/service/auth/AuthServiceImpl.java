@@ -75,6 +75,7 @@ public class AuthServiceImpl implements AuthService {
                         .firstName(user.getFirstName())
                         .lastName(user.getLastName())
                         .action("REGISTERED")
+                        .phoneNumber(user.getPhone())
                         .timestamp(java.time.LocalDateTime.now())
                         .build();
                 UserEvent event = new UserEvent();
@@ -155,7 +156,7 @@ public class AuthServiceImpl implements AuthService {
             }
             String requestJson = objectMapper.writeValueAsString(request);
             String otp = authOtpService.generateAndSaveRegisterOtp(request.getEmail(), requestJson);
-            sendOtpEvent(null, request.getEmail(), request.getFirstName(), request.getLastName(), otp);
+            sendOtpEvent(null, request.getEmail(), request.getFirstName(), request.getLastName(), request.getPhone(), otp);
             return otp;
         } catch (Exception e) {
             throw new AuthException("Failed to initiate registration");
@@ -196,7 +197,7 @@ public class AuthServiceImpl implements AuthService {
                 (com.blubugtech.bakery_auth_service.security.CustomUserDetails) authentication.getPrincipal();
             User user = userDetails.getUser();
             String otp = authOtpService.generateAndSaveLoginOtp(user.getEmail());
-            sendOtpEvent(user.getId(), user.getEmail(), user.getFirstName(), user.getLastName(), otp);
+            sendOtpEvent(user.getId(), user.getEmail(), user.getFirstName(), user.getLastName(), user.getPhone(), otp);
             return otp;
         } catch (AuthException e) {
             throw e;
@@ -228,7 +229,7 @@ public class AuthServiceImpl implements AuthService {
         if (userOpt.isEmpty()) throw new UserNotFoundException("User not found");
         User user = userOpt.get();
         String otp = authOtpService.generateAndSaveResetOtp(request.getEmail());
-        sendOtpEvent(user.getId(), user.getEmail(), user.getFirstName(), user.getLastName(), otp);
+        sendOtpEvent(user.getId(), user.getEmail(), user.getFirstName(), user.getLastName(), user.getPhone(), otp);
         return otp;
     }
 
@@ -379,6 +380,7 @@ public class AuthServiceImpl implements AuthService {
                             .firstName(user.getFirstName())
                             .lastName(user.getLastName())
                             .action("PASSWORD_CHANGED")
+                            .phoneNumber(user.getPhone())
                             .timestamp(java.time.LocalDateTime.now())
                             .build();
                     UserEvent event = new UserEvent();
@@ -414,7 +416,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
 
-    private void sendOtpEvent(UUID userId, String email, String firstName, String lastName, String otp) {
+    private void sendOtpEvent(UUID userId, String email, String firstName, String lastName, String phone, String otp) {
         try {
             com.blubugtech.common.contract.messaging.UserPayload payload = com.blubugtech.common.contract.messaging.UserPayload.builder()
                     .userId(userId)
@@ -422,6 +424,7 @@ public class AuthServiceImpl implements AuthService {
                     .firstName(firstName)
                     .lastName(lastName)
                     .action("OTP_REQUESTED")
+                    .phoneNumber(phone)
                     .otpCode(otp)
                     .expiryMinutes(10) // Fixed matching AuthOtpService validity
                     .timestamp(java.time.LocalDateTime.now())
