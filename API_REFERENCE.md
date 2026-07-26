@@ -415,3 +415,72 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
   }
   ```
   *(Map of string to object representing dashboard stats)*
+
+---
+
+## User Address Controller
+**Base Path:** `/api/users/addresses`
+
+### 1. Get Current User Addresses
+- **Method:** `GET`
+- **Path:** `/api/users/addresses`
+- **Type of API:** `User`
+- **Request Body:** None
+- **Response Body:** `200 OK`
+  ```json
+  [
+    {
+      "id": "UUID",
+      "title": "Home",
+      "addressLine": "123 Main St",
+      "city": "Springfield",
+      "state": "IL",
+      "postalCode": "62701",
+      "country": "USA",
+      "isDefault": true
+    }
+  ]
+  ```
+
+### 2. Add New Address
+- **Method:** `POST`
+- **Path:** `/api/users/addresses`
+- **Type of API:** `User`
+- **Request Body:**
+  ```json
+  {
+    "title": "Home",
+    "addressLine": "123 Main St",
+    "city": "Springfield",
+    "state": "IL",
+    "postalCode": "62701",
+    "country": "USA",
+    "isDefault": true
+  }
+  ```
+- **Response Body:** `200 OK`
+  *(Same as Address Response Object)*
+
+### 3. Update Address
+- **Method:** `PUT`
+- **Path:** `/api/users/addresses/{addressId}`
+- **Type of API:** `User`
+- **Request Body:**
+  *(Same as Add Address Request Body)*
+- **Response Body:** `200 OK`
+  *(Same as Address Response Object)*
+
+### 4. Delete Address
+- **Method:** `DELETE`
+- **Path:** `/api/users/addresses/{addressId}`
+- **Type of API:** `User`
+- **Request Body:** None
+- **Response Body:** `200 OK`
+
+### 5. Set Default Address
+- **Method:** `PUT`
+- **Path:** `/api/users/addresses/{addressId}/default`
+- **Type of API:** `User`
+- **Request Body:** None
+- **Response Body:** `200 OK`
+
