@@ -97,8 +97,9 @@ public class UserController {
         UUID requestingUserId = extractUserIdFromToken(request);
         String requestingUserRole = extractRoleFromToken(request);
 
-        // Allow if requesting own profile or if admin
-        if (!userId.equals(requestingUserId) && (requestingUserRole == null || !requestingUserRole.equalsIgnoreCase("ADMIN"))) {
+        // Allow if requesting own profile, if admin, or if system (inter-service communication)
+        if (!userId.equals(requestingUserId) && (requestingUserRole == null || 
+            (!requestingUserRole.equalsIgnoreCase("ADMIN") && !requestingUserRole.equalsIgnoreCase("SYSTEM")))) {
             return ResponseEntity.status(403).build(); // Forbidden
         }
 
