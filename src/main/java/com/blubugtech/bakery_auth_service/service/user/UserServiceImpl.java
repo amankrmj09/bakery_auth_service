@@ -147,6 +147,13 @@ public class UserServiceImpl implements UserService {
         user.setLastName(request.getLastName());
         user.setPhone(request.getPhone());
         user.setAddress(request.getAddress());
+        
+        if (request.getTwoFactorEnabled() != null) {
+            user.setTwoFactorEnabled(request.getTwoFactorEnabled());
+        }
+        if (request.getLoginNotificationsEnabled() != null) {
+            user.setLoginNotificationsEnabled(request.getLoginNotificationsEnabled());
+        }
 
         // If email changed, mark as unverified
         if (!user.getEmail().equals(request.getEmail())) {

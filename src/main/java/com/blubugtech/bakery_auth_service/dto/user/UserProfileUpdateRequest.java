@@ -29,6 +29,10 @@ public class UserProfileUpdateRequest {
 
     private String address;
 
+    private Boolean twoFactorEnabled;
+
+    private Boolean loginNotificationsEnabled;
+
     // Constructors
     public UserProfileUpdateRequest() {}
 

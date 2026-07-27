@@ -192,7 +192,7 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
-    public String initiateLogin(LoginRequest request) throws AuthException {
+    public com.blubugtech.bakery_auth_service.dto.auth.LoginInitResponse initiateLogin(LoginRequest request) throws AuthException {
         try {
             if (userService.isAccountLocked(request.getUsernameOrEmail())) {
                 throw new AccountLockedException("Account locked");
@@ -212,9 +212,63 @@ public class AuthServiceImpl implements AuthService {
             com.blubugtech.bakery_auth_service.security.CustomUserDetails userDetails = 
                 (com.blubugtech.bakery_auth_service.security.CustomUserDetails) authentication.getPrincipal();
             User user = userDetails.getUser();
+            
+            if (user.getTwoFactorEnabled() != null && !user.getTwoFactorEnabled()) {
+                // Bypass 2FA
+                userService.recordSuccessfulLogin(user.getId());
+                
+                if (user.getLoginNotificationsEnabled() != null && user.getLoginNotificationsEnabled()) {
+                    try {
+                        String ipAddress = "Unknown IP";
+                        org.springframework.web.context.request.RequestAttributes requestAttributes = org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
+                        if (requestAttributes instanceof org.springframework.web.context.request.ServletRequestAttributes) {
+                            jakarta.servlet.http.HttpServletRequest httpRequest = ((org.springframework.web.context.request.ServletRequestAttributes) requestAttributes).getRequest();
+                            ipAddress = httpRequest.getHeader("X-Forwarded-For");
+                            if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
+                                ipAddress = httpRequest.getRemoteAddr();
+                            }
+                        }
+
+                        com.blubugtech.common.contract.messaging.UserPayload payload = com.blubugtech.common.contract.messaging.UserPayload.builder()
+                                .userId(user.getId())
+                                .email(user.getEmail())
+                                .firstName(user.getFirstName())
+                                .lastName(user.getLastName())
+                                .action("NEW_SIGN_IN")
+                                .ipAddress(ipAddress)
+                                .location("Unknown Location")
+                                .timestamp(java.time.LocalDateTime.now())
+                                .build();
+                        com.blubugtech.common.event.UserEvent event = new com.blubugtech.common.event.UserEvent();
+                        event.setEventId(java.util.UUID.randomUUID().toString());
+                        event.setEventType("NEW_SIGN_IN");
+                        event.setTimestamp(java.time.Instant.now());
+                        event.setPayload(payload);
+                        kafkaTemplate.send(userEventsTopic, user.getId().toString(), event);
+                        logger.info("Published NEW_SIGN_IN event for user: {}", user.getUsername());
+                    } catch (Exception ex) {
+                        logger.error("Failed to publish NEW_SIGN_IN event for user: {}", user.getUsername(), ex);
+                    }
+                }
+                
+                String accessToken = jwtService.generateAccessToken(user);
+                String refreshToken = jwtService.generateRefreshToken(user);
+                AuthResponse authResponse = AuthResponse.of(accessToken, refreshToken, jwtService.getExpirationTime(), user);
+                
+                return com.blubugtech.bakery_auth_service.dto.auth.LoginInitResponse.builder()
+                        .requiresOtp(false)
+                        .message("Login successful")
+                        .authResponse(authResponse)
+                        .build();
+            }
+            
             String otp = authOtpService.generateAndSaveLoginOtp(user.getEmail());
             sendOtpEvent(user.getId(), user.getEmail(), user.getFirstName(), user.getLastName(), user.getPhone(), otp);
-            return otp;
+            
+            return com.blubugtech.bakery_auth_service.dto.auth.LoginInitResponse.builder()
+                    .requiresOtp(true)
+                    .message(otp)
+                    .build();
         } catch (AuthException e) {
             throw e;
         } catch (Exception e) {
@@ -236,36 +290,38 @@ public class AuthServiceImpl implements AuthService {
 
         userService.recordSuccessfulLogin(user.getId());
         
-        try {
-            String ipAddress = "Unknown IP";
-            org.springframework.web.context.request.RequestAttributes requestAttributes = org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
-            if (requestAttributes instanceof org.springframework.web.context.request.ServletRequestAttributes) {
-                jakarta.servlet.http.HttpServletRequest httpRequest = ((org.springframework.web.context.request.ServletRequestAttributes) requestAttributes).getRequest();
-                ipAddress = httpRequest.getHeader("X-Forwarded-For");
-                if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
-                    ipAddress = httpRequest.getRemoteAddr();
+        if (user.getLoginNotificationsEnabled() != null && user.getLoginNotificationsEnabled()) {
+            try {
+                String ipAddress = "Unknown IP";
+                org.springframework.web.context.request.RequestAttributes requestAttributes = org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
+                if (requestAttributes instanceof org.springframework.web.context.request.ServletRequestAttributes) {
+                    jakarta.servlet.http.HttpServletRequest httpRequest = ((org.springframework.web.context.request.ServletRequestAttributes) requestAttributes).getRequest();
+                    ipAddress = httpRequest.getHeader("X-Forwarded-For");
+                    if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
+                        ipAddress = httpRequest.getRemoteAddr();
+                    }
                 }
-            }
 
-            com.blubugtech.common.contract.messaging.UserPayload payload = com.blubugtech.common.contract.messaging.UserPayload.builder()
-                    .userId(user.getId())
-                    .email(user.getEmail())
-                    .firstName(user.getFirstName())
-                    .lastName(user.getLastName())
-                    .action("NEW_SIGN_IN")
-                    .ipAddress(ipAddress)
-                    .location("Unknown Location") // Typically you'd use a GeoIP service here
-                    .timestamp(java.time.LocalDateTime.now())
-                    .build();
-            com.blubugtech.common.event.UserEvent event = new com.blubugtech.common.event.UserEvent();
-            event.setEventId(java.util.UUID.randomUUID().toString());
-            event.setEventType("NEW_SIGN_IN");
-            event.setTimestamp(java.time.Instant.now());
-            event.setPayload(payload);
-            kafkaTemplate.send(userEventsTopic, user.getId().toString(), event);
-            logger.info("Published NEW_SIGN_IN event for user: {}", user.getUsername());
-        } catch (Exception ex) {
-            logger.error("Failed to publish NEW_SIGN_IN event for user: {}", user.getUsername(), ex);
+                com.blubugtech.common.contract.messaging.UserPayload payload = com.blubugtech.common.contract.messaging.UserPayload.builder()
+                        .userId(user.getId())
+                        .email(user.getEmail())
+                        .firstName(user.getFirstName())
+                        .lastName(user.getLastName())
+                        .action("NEW_SIGN_IN")
+                        .ipAddress(ipAddress)
+                        .location("Unknown Location") // Typically you'd use a GeoIP service here
+                        .timestamp(java.time.LocalDateTime.now())
+                        .build();
+                com.blubugtech.common.event.UserEvent event = new com.blubugtech.common.event.UserEvent();
+                event.setEventId(java.util.UUID.randomUUID().toString());
+                event.setEventType("NEW_SIGN_IN");
+                event.setTimestamp(java.time.Instant.now());
+                event.setPayload(payload);
+                kafkaTemplate.send(userEventsTopic, user.getId().toString(), event);
+                logger.info("Published NEW_SIGN_IN event for user: {}", user.getUsername());
+            } catch (Exception ex) {
+                logger.error("Failed to publish NEW_SIGN_IN event for user: {}", user.getUsername(), ex);
+            }
         }
         
         String accessToken = jwtService.generateAccessToken(user);

@@ -64,13 +64,12 @@ public class AuthController {
         return ResponseEntity.ok(new MessageResponse("OTP Sent. Mock OTP: " + otp));
     }
 
-    // User Login - Step 1: Initiate
     @PostMapping("/login")
     @Operation(summary = "Login and initiate 2FA")
-    public ResponseEntity<MessageResponse> login(@Valid @RequestBody LoginRequest request) throws AuthException {
+    public ResponseEntity<com.blubugtech.bakery_auth_service.dto.auth.LoginInitResponse> login(@Valid @RequestBody LoginRequest request) throws AuthException {
         logger.info("Login request received for user: {}", request.getUsernameOrEmail());
-        String otp = authService.initiateLogin(request);
-        return ResponseEntity.ok(new MessageResponse("OTP Sent. Mock OTP: " + otp));
+        com.blubugtech.bakery_auth_service.dto.auth.LoginInitResponse response = authService.initiateLogin(request);
+        return ResponseEntity.ok(response);
     }
 
     // Admin Login (1-step, no OTP for now)

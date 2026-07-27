@@ -18,7 +18,7 @@ public interface AuthService {
     String resendRegisterOtp(String email) throws AuthException;
     
     AuthResponse login(LoginRequest request) throws AuthException;
-    String initiateLogin(LoginRequest request) throws AuthException;
+    com.blubugtech.bakery_auth_service.dto.auth.LoginInitResponse initiateLogin(LoginRequest request) throws AuthException;
     AuthResponse verifyLogin(LoginVerifyRequest request) throws AuthException;
     String resendLoginOtp(String email) throws AuthException;
     

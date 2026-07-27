@@ -23,6 +23,8 @@ public class UserResponse {
     private User.UserStatus status;
     private Boolean emailVerified;
     private LocalDateTime lastLogin;
+    private Boolean twoFactorEnabled;
+    private Boolean loginNotificationsEnabled;
     private LocalDateTime createdAt;
 
     // Constructors
@@ -42,6 +44,8 @@ public class UserResponse {
         response.status = user.getStatus();
         response.emailVerified = user.getEmailVerified();
         response.lastLogin = user.getLastLogin();
+        response.twoFactorEnabled = user.getTwoFactorEnabled();
+        response.loginNotificationsEnabled = user.getLoginNotificationsEnabled();
         response.createdAt = user.getCreatedAt();
         return response;
     }
