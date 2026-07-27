@@ -235,6 +235,39 @@ public class AuthServiceImpl implements AuthService {
         }
 
         userService.recordSuccessfulLogin(user.getId());
+        
+        try {
+            String ipAddress = "Unknown IP";
+            org.springframework.web.context.request.RequestAttributes requestAttributes = org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
+            if (requestAttributes instanceof org.springframework.web.context.request.ServletRequestAttributes) {
+                jakarta.servlet.http.HttpServletRequest httpRequest = ((org.springframework.web.context.request.ServletRequestAttributes) requestAttributes).getRequest();
+                ipAddress = httpRequest.getHeader("X-Forwarded-For");
+                if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
+                    ipAddress = httpRequest.getRemoteAddr();
+                }
+            }
+
+            com.blubugtech.common.contract.messaging.UserPayload payload = com.blubugtech.common.contract.messaging.UserPayload.builder()
+                    .userId(user.getId())
+                    .email(user.getEmail())
+                    .firstName(user.getFirstName())
+                    .lastName(user.getLastName())
+                    .action("NEW_SIGN_IN")
+                    .ipAddress(ipAddress)
+                    .location("Unknown Location") // Typically you'd use a GeoIP service here
+                    .timestamp(java.time.LocalDateTime.now())
+                    .build();
+            com.blubugtech.common.event.UserEvent event = new com.blubugtech.common.event.UserEvent();
+            event.setEventId(java.util.UUID.randomUUID().toString());
+            event.setEventType("NEW_SIGN_IN");
+            event.setTimestamp(java.time.Instant.now());
+            event.setPayload(payload);
+            kafkaTemplate.send(userEventsTopic, user.getId().toString(), event);
+            logger.info("Published NEW_SIGN_IN event for user: {}", user.getUsername());
+        } catch (Exception ex) {
+            logger.error("Failed to publish NEW_SIGN_IN event for user: {}", user.getUsername(), ex);
+        }
+        
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
         return AuthResponse.of(accessToken, refreshToken, jwtService.getExpirationTime(), user);
