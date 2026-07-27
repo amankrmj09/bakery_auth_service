@@ -44,7 +44,9 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
         DashboardStatistics currentStats = getStatistics();
         LocalDate today = LocalDate.now();
         LocalDate pastDate;
-        if ("7d".equalsIgnoreCase(timeframe)) {
+        if ("1d".equalsIgnoreCase(timeframe)) {
+            pastDate = today.minusDays(1);
+        } else if ("7d".equalsIgnoreCase(timeframe)) {
             pastDate = today.minusDays(7);
         } else {
             pastDate = today.minusMonths(1);
@@ -69,11 +71,28 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
 
         List<DashboardStatisticsSnapshot> snapshots = snapshotRepository.findBySnapshotDateBetweenOrderBySnapshotDateAsc(pastDate, today);
         List<Map<String, Object>> chartData = new java.util.ArrayList<>();
+        
+        BigDecimal previousCumulative = BigDecimal.ZERO;
+        if (!snapshots.isEmpty()) {
+             Optional<DashboardStatisticsSnapshot> beforeStart = snapshotRepository.findBySnapshotDate(snapshots.get(0).getSnapshotDate().minusDays(1));
+             if (beforeStart.isPresent()) {
+                 previousCumulative = beforeStart.get().getTotalRevenue();
+             }
+        }
+
         for (DashboardStatisticsSnapshot snap : snapshots) {
             Map<String, Object> dataPoint = new HashMap<>();
             dataPoint.put("name", snap.getSnapshotDate().toString()); // Simple ISO date string
-            dataPoint.put("revenue", snap.getTotalRevenue());
+            
+            BigDecimal currentCumulative = snap.getTotalRevenue();
+            BigDecimal dailyRevenue = currentCumulative.subtract(previousCumulative);
+            if (dailyRevenue.compareTo(BigDecimal.ZERO) < 0) {
+                 dailyRevenue = BigDecimal.ZERO;
+            }
+            dataPoint.put("revenue", dailyRevenue);
+            
             chartData.add(dataPoint);
+            previousCumulative = currentCumulative;
         }
 
         Map<String, Object> response = new HashMap<>();
