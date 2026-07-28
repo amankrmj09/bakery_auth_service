@@ -8,7 +8,7 @@ import com.blubugtech.bakery_auth_service.exception.AuthException;
 import com.blubugtech.bakery_auth_service.security.JwtService;
 import com.blubugtech.bakery_auth_service.service.dashboard.DashboardStatisticsService;
 import com.blubugtech.bakery_auth_service.service.user.UserService;
-import com.blubugtech.common.contract.feign.MessageResponse;
+import org.blubakery.bakery_common_libs.contract.feign.MessageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;

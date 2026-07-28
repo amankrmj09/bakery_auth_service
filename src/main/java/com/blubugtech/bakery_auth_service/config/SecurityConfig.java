@@ -1,7 +1,7 @@
 package com.blubugtech.bakery_auth_service.config;
 
 import com.blubugtech.bakery_auth_service.security.CustomUserDetailsService;
-import com.blubugtech.common.security.HeaderAuthenticationFilter;
+import org.blubakery.bakery_common_libs.security.HeaderAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

@@ -14,7 +14,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.blubugtech.common.event.UserEvent;
+import org.blubakery.bakery_common_libs.event.UserEvent;
+import org.blubakery.bakery_common_libs.constants.KafkaTopics;
 import org.springframework.kafka.core.KafkaTemplate;
 
 import java.util.HashMap;
@@ -42,7 +43,7 @@ public class AuthServiceImpl implements AuthService {
     private final ObjectMapper objectMapper;
 
     @org.springframework.beans.factory.annotation.Value("${kafka.topic.user-events:user-events}")
-    private String userEventsTopic;
+    
     public AuthServiceImpl(UserService userService, JwtService jwtService, KafkaTemplate<String, Object> kafkaTemplate, org.springframework.security.authentication.AuthenticationManager authenticationManager, AuthOtpService authOtpService, ObjectMapper objectMapper) {
         this.userService = userService;
         this.jwtService = jwtService;
@@ -83,7 +84,7 @@ public class AuthServiceImpl implements AuthService {
                 event.setEventType("USER_REGISTERED");
                 event.setTimestamp(java.time.Instant.now());
                 event.setPayload(payload);
-                kafkaTemplate.send(userEventsTopic, user.getId().toString(), event);
+                kafkaTemplate.send(KafkaTopics.USER_TOPIC, user.getId().toString(), event);
                 logger.info("Published UserEvent for registered user: {}", user.getId());
             } catch (Exception ex) {
                 logger.error("Failed to publish UserEvent: {}", ex.getMessage());
@@ -244,7 +245,7 @@ public class AuthServiceImpl implements AuthService {
                         event.setEventType("NEW_SIGN_IN");
                         event.setTimestamp(java.time.Instant.now());
                         event.setPayload(payload);
-                        kafkaTemplate.send(userEventsTopic, user.getId().toString(), event);
+                        kafkaTemplate.send(KafkaTopics.USER_TOPIC, user.getId().toString(), event);
                         logger.info("Published NEW_SIGN_IN event for user: {}", user.getUsername());
                     } catch (Exception ex) {
                         logger.error("Failed to publish NEW_SIGN_IN event for user: {}", user.getUsername(), ex);
@@ -317,7 +318,7 @@ public class AuthServiceImpl implements AuthService {
                 event.setEventType("NEW_SIGN_IN");
                 event.setTimestamp(java.time.Instant.now());
                 event.setPayload(payload);
-                kafkaTemplate.send(userEventsTopic, user.getId().toString(), event);
+                kafkaTemplate.send(KafkaTopics.USER_TOPIC, user.getId().toString(), event);
                 logger.info("Published NEW_SIGN_IN event for user: {}", user.getUsername());
             } catch (Exception ex) {
                 logger.error("Failed to publish NEW_SIGN_IN event for user: {}", user.getUsername(), ex);
@@ -517,7 +518,7 @@ public class AuthServiceImpl implements AuthService {
                     event.setEventType("PASSWORD_CHANGED");
                     event.setTimestamp(java.time.Instant.now());
                     event.setPayload(payload);
-                    kafkaTemplate.send(userEventsTopic, user.getId().toString(), event);
+                    kafkaTemplate.send(KafkaTopics.USER_TOPIC, user.getId().toString(), event);
                     logger.info("Published UserEvent for password change: {}", user.getId());
                 }
             } catch (Exception ex) {
@@ -565,7 +566,7 @@ public class AuthServiceImpl implements AuthService {
             event.setPayload(payload);
             
             String key = userId != null ? userId.toString() : email;
-            kafkaTemplate.send(userEventsTopic, key, event);
+            kafkaTemplate.send(KafkaTopics.USER_TOPIC, key, event);
             logger.info("Published UserEvent for OTP request to email: {}", email);
         } catch (Exception ex) {
             logger.error("Failed to publish OTP event: {}", ex.getMessage());

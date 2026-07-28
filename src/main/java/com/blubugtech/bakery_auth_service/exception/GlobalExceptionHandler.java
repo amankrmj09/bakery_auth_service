@@ -1,7 +1,7 @@
 package com.blubugtech.bakery_auth_service.exception;
 
-import com.blubugtech.common.exception.handler.BaseExceptionHandler;
-import com.blubugtech.common.exception.handler.ErrorResponse;
+import org.blubakery.bakery_common_libs.exception.handler.BaseExceptionHandler;
+import org.blubakery.bakery_common_libs.exception.handler.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;

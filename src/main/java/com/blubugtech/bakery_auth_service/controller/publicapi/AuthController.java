@@ -15,9 +15,9 @@ import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 
-import com.blubugtech.common.contract.feign.MessageResponse;
-import com.blubugtech.common.exception.security.UnauthenticatedException;
-import com.blubugtech.common.exception.security.InvalidTokenException;
+import org.blubakery.bakery_common_libs.contract.feign.MessageResponse;
+import org.blubakery.bakery_common_libs.exception.security.UnauthenticatedException;
+import org.blubakery.bakery_common_libs.exception.security.InvalidTokenException;
 import java.util.Map;
 import java.util.UUID;
 
