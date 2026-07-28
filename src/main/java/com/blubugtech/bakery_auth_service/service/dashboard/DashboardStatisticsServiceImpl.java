@@ -44,28 +44,42 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
         DashboardStatistics currentStats = getStatistics();
         LocalDate today = LocalDate.now();
         LocalDate pastDate;
+        LocalDate previousPeriodDate;
         if ("1d".equalsIgnoreCase(timeframe)) {
             pastDate = today.minusDays(1);
+            previousPeriodDate = today.minusDays(2);
         } else if ("7d".equalsIgnoreCase(timeframe)) {
             pastDate = today.minusDays(7);
+            previousPeriodDate = today.minusDays(14);
         } else {
             pastDate = today.minusMonths(1);
+            previousPeriodDate = today.minusMonths(2);
         }
 
-        Optional<DashboardStatisticsSnapshot> pastSnapshotOpt = snapshotRepository.findBySnapshotDate(pastDate);
-        BigDecimal pastRevenue = BigDecimal.ZERO;
+        Optional<DashboardStatisticsSnapshot> pastSnapshotOpt = snapshotRepository.findFirstBySnapshotDateLessThanEqualOrderBySnapshotDateDesc(pastDate);
+        Optional<DashboardStatisticsSnapshot> previousSnapshotOpt = snapshotRepository.findFirstBySnapshotDateLessThanEqualOrderBySnapshotDateDesc(previousPeriodDate);
         
-        if (pastSnapshotOpt.isPresent()) {
-            pastRevenue = pastSnapshotOpt.get().getTotalRevenue();
+        BigDecimal totalAtPastDate = pastSnapshotOpt.map(DashboardStatisticsSnapshot::getTotalRevenue).orElse(BigDecimal.ZERO);
+        BigDecimal totalAtPreviousDate = previousSnapshotOpt.map(DashboardStatisticsSnapshot::getTotalRevenue).orElse(BigDecimal.ZERO);
+
+        BigDecimal currentTotal = currentStats.getTotalRevenue();
+        
+        BigDecimal currentPeriodRevenue = currentTotal.subtract(totalAtPastDate);
+        if (currentPeriodRevenue.compareTo(BigDecimal.ZERO) < 0) {
+            currentPeriodRevenue = BigDecimal.ZERO;
+        }
+        
+        BigDecimal previousPeriodRevenue = totalAtPastDate.subtract(totalAtPreviousDate);
+        if (previousPeriodRevenue.compareTo(BigDecimal.ZERO) < 0) {
+            previousPeriodRevenue = BigDecimal.ZERO;
         }
 
-        BigDecimal currentRevenue = currentStats.getTotalRevenue();
         double growthRate = 0.0;
-        if (pastRevenue.compareTo(BigDecimal.ZERO) > 0) {
-            growthRate = currentRevenue.subtract(pastRevenue)
-                    .divide(pastRevenue, 4, RoundingMode.HALF_UP)
+        if (previousPeriodRevenue.compareTo(BigDecimal.ZERO) > 0) {
+            growthRate = currentPeriodRevenue.subtract(previousPeriodRevenue)
+                    .divide(previousPeriodRevenue, 4, RoundingMode.HALF_UP)
                     .multiply(BigDecimal.valueOf(100)).doubleValue();
-        } else if (currentRevenue.compareTo(BigDecimal.ZERO) > 0 && pastSnapshotOpt.isPresent()) {
+        } else if (currentPeriodRevenue.compareTo(BigDecimal.ZERO) > 0) {
             growthRate = 100.0;
         }
 
@@ -74,7 +88,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
         
         BigDecimal previousCumulative = BigDecimal.ZERO;
         if (!snapshots.isEmpty()) {
-             Optional<DashboardStatisticsSnapshot> beforeStart = snapshotRepository.findBySnapshotDate(snapshots.get(0).getSnapshotDate().minusDays(1));
+             Optional<DashboardStatisticsSnapshot> beforeStart = snapshotRepository.findFirstBySnapshotDateLessThanEqualOrderBySnapshotDateDesc(snapshots.get(0).getSnapshotDate().minusDays(1));
              if (beforeStart.isPresent()) {
                  previousCumulative = beforeStart.get().getTotalRevenue();
              }

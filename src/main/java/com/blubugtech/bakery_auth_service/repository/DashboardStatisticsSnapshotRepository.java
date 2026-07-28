@@ -13,4 +13,5 @@ import java.util.UUID;
 public interface DashboardStatisticsSnapshotRepository extends JpaRepository<DashboardStatisticsSnapshot, UUID> {
     Optional<DashboardStatisticsSnapshot> findBySnapshotDate(LocalDate snapshotDate);
     List<DashboardStatisticsSnapshot> findBySnapshotDateBetweenOrderBySnapshotDateAsc(LocalDate startDate, LocalDate endDate);
+    Optional<DashboardStatisticsSnapshot> findFirstBySnapshotDateLessThanEqualOrderBySnapshotDateDesc(LocalDate date);
 }
