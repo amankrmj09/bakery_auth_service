@@ -17,8 +17,6 @@ repositories {
     mavenLocal()
     mavenCentral()
 }
-    }
-}
 
 // extra["snippetsDir"] = file("build/generated-snippets")
 val springCloudVersion by extra("2025.0.3")
