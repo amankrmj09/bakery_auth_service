@@ -1,5 +1,6 @@
 package com.blubugtech.bakery_auth_service.controller.admin;
 
+import lombok.extern.slf4j.Slf4j;
 import com.blubugtech.bakery_auth_service.dto.auth.RegisterRequest;
 import com.blubugtech.bakery_auth_service.dto.user.UserProfileUpdateRequest;
 import com.blubugtech.bakery_auth_service.dto.user.UserResponse;
@@ -15,8 +16,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -35,9 +34,8 @@ import java.util.UUID;
 @Tag(name = "User Management", description = "Endpoints for managing users and profiles")
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
+@Slf4j
 public class UserController {
-
-    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
     private UserService userService;
 
@@ -50,7 +48,7 @@ public class UserController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get current user profile")
     public ResponseEntity<UserResponse> getUserProfile(HttpServletRequest request) throws AuthException {
-        logger.info("Get user profile request received");
+        log.info("Get user profile request received");
 
         UUID userId = extractUserIdFromToken(request);
         if (userId == null) {
@@ -59,7 +57,7 @@ public class UserController {
 
         UserResponse userResponse = userService.getUserProfile(userId);
 
-        logger.info("User profile retrieved for user ID: {}", userId);
+        log.info("User profile retrieved for user ID: {}", userId);
         return ResponseEntity.ok(userResponse);
     }
 
@@ -71,7 +69,7 @@ public class UserController {
             @Valid @RequestBody UserProfileUpdateRequest request,
             HttpServletRequest httpRequest) throws AuthException {
 
-        logger.info("Update user profile request received");
+        log.info("Update user profile request received");
 
         UUID userId = extractUserIdFromToken(httpRequest);
         if (userId == null) {
@@ -80,7 +78,7 @@ public class UserController {
 
         UserResponse userResponse = userService.updateUserProfile(userId, request);
 
-        logger.info("User profile updated for user ID: {}", userId);
+        log.info("User profile updated for user ID: {}", userId);
         return ResponseEntity.ok(userResponse);
     }
 
@@ -92,7 +90,7 @@ public class UserController {
             @PathVariable UUID userId,
             HttpServletRequest request) throws AuthException {
 
-        logger.info("Get user by ID request received for user ID: {}", userId);
+        log.info("Get user by ID request received for user ID: {}", userId);
 
         UUID requestingUserId = extractUserIdFromToken(request);
         String requestingUserRole = extractRoleFromToken(request);
@@ -105,7 +103,7 @@ public class UserController {
 
         UserResponse userResponse = userService.getUserProfile(userId);
 
-        logger.info("User retrieved for user ID: {}", userId);
+        log.info("User retrieved for user ID: {}", userId);
         return ResponseEntity.ok(userResponse);
     }
 
@@ -119,14 +117,14 @@ public class UserController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "DESC") String sortDir) {
             
-        logger.info("Get all users request received (admin)");
+        log.info("Get all users request received (admin)");
 
         Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
 
         Page<UserResponse> users = userService.getAllUsers(pageable);
 
-        logger.info("All users retrieved, count: {}", users.getContent().size());
+        log.info("All users retrieved, count: {}", users.getContent().size());
         return ResponseEntity.ok(new PagedModel<>(users));
     }
 
@@ -141,14 +139,14 @@ public class UserController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "DESC") String sortDir) {
             
-        logger.info("Search users request received (admin) with query: {}", query);
+        log.info("Search users request received (admin) with query: {}", query);
 
         Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
 
         Page<UserResponse> users = userService.searchUsers(query, pageable);
 
-        logger.info("User search completed, results: {}", users.getContent().size());
+        log.info("User search completed, results: {}", users.getContent().size());
         return ResponseEntity.ok(new PagedModel<>(users));
     }
 
@@ -163,7 +161,7 @@ public class UserController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "DESC") String sortDir) {
             
-        logger.info("Get users by role request received (admin) for role: {}", role);
+        log.info("Get users by role request received (admin) for role: {}", role);
 
         Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
@@ -171,7 +169,7 @@ public class UserController {
         User.Role userRole = User.Role.valueOf(role.toUpperCase());
         Page<UserResponse> users = userService.getUsersByRole(userRole, pageable);
 
-        logger.info("Users by role retrieved, count: {}", users.getContent().size());
+        log.info("Users by role retrieved, count: {}", users.getContent().size());
         return ResponseEntity.ok(new PagedModel<>(users));
     }
 
@@ -183,7 +181,7 @@ public class UserController {
             @PathVariable UUID userId,
             @RequestBody Map<String, String> request) {
 
-        logger.info("Update user role request received (admin) for user ID: {}", userId);
+        log.info("Update user role request received (admin) for user ID: {}", userId);
 
         String roleStr = request.get("role");
         if (roleStr == null) {
@@ -193,7 +191,7 @@ public class UserController {
         User.Role role = User.Role.valueOf(roleStr.toUpperCase());
         userService.updateUserRole(userId, role);
 
-        logger.info("User role updated to {} for user ID: {}", role, userId);
+        log.info("User role updated to {} for user ID: {}", role, userId);
         return ResponseEntity.ok(new MessageResponse("User role updated successfully"));
     }
 
@@ -205,7 +203,7 @@ public class UserController {
             @PathVariable UUID userId,
             @RequestBody Map<String, String> request) {
 
-        logger.info("Update user status request received (admin) for user ID: {}", userId);
+        log.info("Update user status request received (admin) for user ID: {}", userId);
 
         String statusStr = request.get("status");
         if (statusStr == null) {
@@ -215,7 +213,7 @@ public class UserController {
         User.UserStatus status = User.UserStatus.valueOf(statusStr.toUpperCase());
         userService.updateUserStatus(userId, status);
 
-        logger.info("User status updated to {} for user ID: {}", status, userId);
+        log.info("User status updated to {} for user ID: {}", status, userId);
         return ResponseEntity.ok(new MessageResponse("User status updated successfully"));
     }
 
@@ -224,11 +222,11 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Unlock user account (Admin)")
     public ResponseEntity<MessageResponse> unlockUserAccount(@PathVariable UUID userId) throws AuthException {
-        logger.info("Unlock user account request received (admin) for user ID: {}", userId);
+        log.info("Unlock user account request received (admin) for user ID: {}", userId);
 
         userService.unlockAccount(userId);
 
-        logger.info("User account unlocked for user ID: {}", userId);
+        log.info("User account unlocked for user ID: {}", userId);
         return ResponseEntity.ok(new MessageResponse("User account unlocked successfully"));
     }
 
@@ -237,11 +235,11 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete user (Admin)")
     public ResponseEntity<MessageResponse> deleteUser(@PathVariable UUID userId) throws AuthException {
-        logger.info("Delete user request received (admin) for user ID: {}", userId);
+        log.info("Delete user request received (admin) for user ID: {}", userId);
 
         userService.deleteUser(userId);
 
-        logger.info("User deleted for user ID: {}", userId);
+        log.info("User deleted for user ID: {}", userId);
         return ResponseEntity.ok(new MessageResponse("User deleted successfully"));
     }
 
@@ -250,11 +248,11 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get user statistics (Admin)")
     public ResponseEntity<Map<String, Long>> getUserStatistics() {
-        logger.info("Get user statistics request received (admin)");
+        log.info("Get user statistics request received (admin)");
 
         Map<String, Long> statistics = userService.getUserStatistics();
 
-        logger.info("User statistics retrieved");
+        log.info("User statistics retrieved");
         return ResponseEntity.ok(statistics);
     }
 
@@ -264,7 +262,7 @@ public class UserController {
     @Operation(summary = "Get dashboard statistics (Admin)")
     public ResponseEntity<Map<String, Object>> getDashboardStats(
             @RequestParam(defaultValue = "1m") String timeframe) {
-        logger.info("Get dashboard statistics request received (admin) for timeframe: {}", timeframe);
+        log.info("Get dashboard statistics request received (admin) for timeframe: {}", timeframe);
         Map<String, Object> stats = dashboardStatisticsService.getStatisticsWithGrowth(timeframe);
         return ResponseEntity.ok(stats);
     }

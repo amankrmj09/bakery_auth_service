@@ -1,11 +1,10 @@
 package com.blubugtech.bakery_auth_service.service.dashboard;
 
+import lombok.extern.slf4j.Slf4j;
 import com.blubugtech.bakery_auth_service.entity.DashboardStatistics;
 import com.blubugtech.bakery_auth_service.entity.DashboardStatisticsSnapshot;
 import com.blubugtech.bakery_auth_service.repository.DashboardStatisticsRepository;
 import com.blubugtech.bakery_auth_service.repository.DashboardStatisticsSnapshotRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,8 +17,8 @@ import java.util.Map;
 import java.util.Optional;
 
 @Service
+@Slf4j
 public class DashboardStatisticsServiceImpl implements DashboardStatisticsService {
-    private static final Logger logger = LoggerFactory.getLogger(DashboardStatisticsService.class);
 
     private final DashboardStatisticsRepository dashboardStatisticsRepository;
     private final DashboardStatisticsSnapshotRepository snapshotRepository;
@@ -136,7 +135,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
         stats.setTotalUsers(stats.getTotalUsers() + 1);
         dashboardStatisticsRepository.save(stats);
         updateSnapshot(stats);
-        logger.info("Incremented total users to {}", stats.getTotalUsers());
+        log.info("Incremented total users to {}", stats.getTotalUsers());
     }
 
     @Transactional
@@ -146,7 +145,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
         stats.setTotalUsers(newTotal);
         dashboardStatisticsRepository.save(stats);
         updateSnapshot(stats);
-        logger.info("Decremented total users to {}", stats.getTotalUsers());
+        log.info("Decremented total users to {}", stats.getTotalUsers());
     }
 
     @Transactional
@@ -155,7 +154,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
         stats.setActiveOrders(stats.getActiveOrders() + 1);
         dashboardStatisticsRepository.save(stats);
         updateSnapshot(stats);
-        logger.info("Incremented active orders to {}", stats.getActiveOrders());
+        log.info("Incremented active orders to {}", stats.getActiveOrders());
     }
 
     @Transactional
@@ -165,7 +164,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
         stats.setActiveOrders(newActive);
         dashboardStatisticsRepository.save(stats);
         updateSnapshot(stats);
-        logger.info("Decremented active orders to {}", stats.getActiveOrders());
+        log.info("Decremented active orders to {}", stats.getActiveOrders());
     }
 
     @Transactional
@@ -177,6 +176,6 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
         stats.setTotalRevenue(stats.getTotalRevenue().add(amount));
         dashboardStatisticsRepository.save(stats);
         updateSnapshot(stats);
-        logger.info("Added {} to total revenue, new total: {}", amount, stats.getTotalRevenue());
+        log.info("Added {} to total revenue, new total: {}", amount, stats.getTotalRevenue());
     }
 }

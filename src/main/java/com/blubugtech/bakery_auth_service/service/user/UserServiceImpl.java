@@ -1,5 +1,6 @@
 package com.blubugtech.bakery_auth_service.service.user;
 
+import lombok.extern.slf4j.Slf4j;
 import com.blubugtech.bakery_auth_service.dto.auth.RegisterRequest;
 import com.blubugtech.bakery_auth_service.dto.user.UserProfileUpdateRequest;
 import com.blubugtech.bakery_auth_service.dto.user.UserResponse;
@@ -9,8 +10,6 @@ import com.blubugtech.bakery_auth_service.service.dashboard.DashboardStatisticsS
 import com.blubugtech.bakery_auth_service.entity.User;
 import com.blubugtech.bakery_auth_service.exception.AuthException;
 import com.blubugtech.bakery_auth_service.repository.UserRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,9 +24,8 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
+@Slf4j
 public class UserServiceImpl implements UserService {
-
-    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -50,7 +48,7 @@ public class UserServiceImpl implements UserService {
 
     // Create new user
     public User createUser(RegisterRequest request) throws AuthException {
-        logger.info("Creating new user with username: {}", request.getUsername());
+        log.info("Creating new user with username: {}", request.getUsername());
 
         // Check if username already exists
         if (userRepository.existsByUsername(request.getUsername())) {
@@ -83,7 +81,7 @@ public class UserServiceImpl implements UserService {
         user.setLoginAttempts(0);
 
         User savedUser = userRepository.save(user);
-        logger.info("User created successfully with ID: {}", savedUser.getId());
+        log.info("User created successfully with ID: {}", savedUser.getId());
         
         dashboardStatisticsService.incrementUsers();
         
@@ -161,7 +159,7 @@ public class UserServiceImpl implements UserService {
         }
 
         User updatedUser = userRepository.save(user);
-        logger.info("User profile updated for ID: {}", userId);
+        log.info("User profile updated for ID: {}", userId);
         return userMapper.toDto(updatedUser);
     }
 
@@ -177,7 +175,7 @@ public class UserServiceImpl implements UserService {
 
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
-        logger.info("Password updated for user ID: {}", userId);
+        log.info("Password updated for user ID: {}", userId);
     }
 
     public void resetPassword(UUID userId, String newPassword) throws AuthException {
@@ -185,7 +183,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new AuthException("User not found"));
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
-        logger.info("Password reset for user ID: {}", userId);
+        log.info("Password reset for user ID: {}", userId);
     }
 
     // Record successful login
@@ -198,7 +196,7 @@ public class UserServiceImpl implements UserService {
         user.setLockedUntil(null); // Unlock account if locked
         userRepository.save(user);
 
-        logger.info("Successful login recorded for user: {}", user.getUsername());
+        log.info("Successful login recorded for user: {}", user.getUsername());
     }
 
     // Record failed login attempt
@@ -212,12 +210,12 @@ public class UserServiceImpl implements UserService {
             // Lock account if max attempts reached
             if (attempts >= maxLoginAttempts) {
                 user.setLockedUntil(LocalDateTime.now().plusSeconds(lockoutDuration / 1000));
-                logger.warn("Account locked for user: {} after {} failed attempts",
+                log.warn("Account locked for user: {} after {} failed attempts",
                         user.getUsername(), attempts);
             }
 
             userRepository.save(user);
-            logger.info("Failed login attempt recorded for user: {} (Attempt: {})",
+            log.info("Failed login attempt recorded for user: {} (Attempt: {})",
                     user.getUsername(), attempts);
         }
     }
@@ -238,7 +236,7 @@ public class UserServiceImpl implements UserService {
         user.setLoginAttempts(0);
         userRepository.save(user);
 
-        logger.info("Account unlocked for user: {}", user.getUsername());
+        log.info("Account unlocked for user: {}", user.getUsername());
     }
 
     // Get all users (admin function)
@@ -266,7 +264,7 @@ public class UserServiceImpl implements UserService {
 
         user.setRole(newRole);
         userRepository.save(user);
-        logger.info("Role updated to {} for user: {}", newRole, user.getUsername());
+        log.info("Role updated to {} for user: {}", newRole, user.getUsername());
     }
 
     // Update user status (admin function)
@@ -276,7 +274,7 @@ public class UserServiceImpl implements UserService {
 
         user.setStatus(status);
         userRepository.save(user);
-        logger.info("Status updated to {} for user: {}", status, user.getUsername());
+        log.info("Status updated to {} for user: {}", status, user.getUsername());
     }
 
     // Verify email
@@ -286,7 +284,7 @@ public class UserServiceImpl implements UserService {
 
         user.setEmailVerified(true);
         userRepository.save(user);
-        logger.info("Email verified for user: {}", user.getUsername());
+        log.info("Email verified for user: {}", user.getUsername());
     }
 
     // Delete user (admin function)
@@ -296,7 +294,7 @@ public class UserServiceImpl implements UserService {
 
         userRepository.delete(user);
         dashboardStatisticsService.decrementUsers();
-        logger.info("User deleted: {}", user.getUsername());
+        log.info("User deleted: {}", user.getUsername());
     }
 
     // Get user statistics

@@ -1,8 +1,7 @@
 package com.blubugtech.bakery_auth_service.controller.internal;
 
+import lombok.extern.slf4j.Slf4j;
 import com.blubugtech.bakery_auth_service.service.dashboard.DashboardStatisticsService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,9 +14,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/users/internal/stats")
 @Tag(name = "Internal Statistics", description = "Endpoints for internal metrics and statistics")
+@Slf4j
 public class InternalStatisticsController {
-
-    private static final Logger logger = LoggerFactory.getLogger(InternalStatisticsController.class);
     private final DashboardStatisticsService statisticsService;
 
     public InternalStatisticsController(DashboardStatisticsService statisticsService) {

@@ -1,5 +1,6 @@
 package com.blubugtech.bakery_auth_service.service.auth;
 
+import lombok.extern.slf4j.Slf4j;
 import com.blubugtech.bakery_auth_service.dto.auth.AuthResponse;
 import com.blubugtech.bakery_auth_service.dto.auth.LoginRequest;
 import com.blubugtech.bakery_auth_service.dto.auth.RegisterRequest;
@@ -9,8 +10,6 @@ import com.blubugtech.bakery_auth_service.service.user.UserService;
 import com.blubugtech.bakery_auth_service.security.JwtService;
 import com.blubugtech.bakery_auth_service.exception.*;
 import lombok.Getter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,9 +26,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 @Transactional
+@Slf4j
 public class AuthServiceImpl implements AuthService {
-
-    private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
 
     final private UserService userService;
 
@@ -55,7 +53,7 @@ public class AuthServiceImpl implements AuthService {
 
     // User registration
     public AuthResponse register(RegisterRequest request) throws AuthException {
-        logger.info("Processing registration for username: {}", request.getUsername());
+        log.info("Processing registration for username: {}", request.getUsername());
 
         try {
             // Create user through UserService
@@ -66,7 +64,7 @@ public class AuthServiceImpl implements AuthService {
             String refreshToken = jwtService.generateRefreshToken(user);
             Long expiresIn = jwtService.getExpirationTime();
 
-            logger.info("Registration successful for user: {}", user.getUsername());
+            log.info("Registration successful for user: {}", user.getUsername());
             
             // Send welcome notification via Kafka
             try {
@@ -85,22 +83,22 @@ public class AuthServiceImpl implements AuthService {
                 event.setTimestamp(java.time.Instant.now());
                 event.setPayload(payload);
                 kafkaTemplate.send(KafkaTopics.USER_TOPIC, user.getId().toString(), event);
-                logger.info("Published UserEvent for registered user: {}", user.getId());
+                log.info("Published UserEvent for registered user: {}", user.getId());
             } catch (Exception ex) {
-                logger.error("Failed to publish UserEvent: {}", ex.getMessage());
+                log.error("Failed to publish UserEvent: {}", ex.getMessage());
             }
 
             return AuthResponse.of(accessToken, refreshToken, expiresIn, user);
 
         } catch (Exception e) {
-            logger.error("Registration failed for username: {} - {}", request.getUsername(), e.getMessage());
+            log.error("Registration failed for username: {} - {}", request.getUsername(), e.getMessage());
             throw new AuthException("Registration failed: " + e.getMessage());
         }
     }
 
     // User login
     public AuthResponse login(LoginRequest request) throws AuthException {
-        logger.info("Processing login for user: {}", request.getUsernameOrEmail());
+        log.info("Processing login for user: {}", request.getUsernameOrEmail());
 
         try {
             // Check if account is locked
@@ -136,21 +134,21 @@ public class AuthServiceImpl implements AuthService {
             String refreshToken = jwtService.generateRefreshToken(user);
             Long expiresIn = jwtService.getExpirationTime();
 
-            logger.info("Login successful for user: {}", user.getUsername());
+            log.info("Login successful for user: {}", user.getUsername());
 
             return AuthResponse.of(accessToken, refreshToken, expiresIn, user);
 
         } catch (AuthException e) {
-            logger.warn("Login failed for user: {} - {}", request.getUsernameOrEmail(), e.getMessage());
+            log.warn("Login failed for user: {} - {}", request.getUsernameOrEmail(), e.getMessage());
             throw e;
         } catch (Exception e) {
-            logger.error("Unexpected error during login for user: {} - {}", request.getUsernameOrEmail(), e.getMessage());
+            log.error("Unexpected error during login for user: {} - {}", request.getUsernameOrEmail(), e.getMessage());
             throw new AuthException("Login failed due to an unexpected error");
         }
     }
 
     public String initiateRegister(RegisterRequest request) throws AuthException {
-        logger.info("Initiating OTP registration for: {}", request.getEmail());
+        log.info("Initiating OTP registration for: {}", request.getEmail());
         try {
             if (userService.findByUsername(request.getUsername()).isPresent() || userService.findByEmail(request.getEmail()).isPresent()) {
                 throw new AuthException("User already exists");
@@ -178,7 +176,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     public String resendRegisterOtp(String email) throws AuthException {
-        logger.info("Resending OTP registration for: {}", email);
+        log.info("Resending OTP registration for: {}", email);
         try {
             String otp = authOtpService.resendRegisterOtp(email);
             if (otp == null) {
@@ -246,9 +244,9 @@ public class AuthServiceImpl implements AuthService {
                         event.setTimestamp(java.time.Instant.now());
                         event.setPayload(payload);
                         kafkaTemplate.send(KafkaTopics.USER_TOPIC, user.getId().toString(), event);
-                        logger.info("Published NEW_SIGN_IN event for user: {}", user.getUsername());
+                        log.info("Published NEW_SIGN_IN event for user: {}", user.getUsername());
                     } catch (Exception ex) {
-                        logger.error("Failed to publish NEW_SIGN_IN event for user: {}", user.getUsername(), ex);
+                        log.error("Failed to publish NEW_SIGN_IN event for user: {}", user.getUsername(), ex);
                     }
                 }
                 
@@ -319,9 +317,9 @@ public class AuthServiceImpl implements AuthService {
                 event.setTimestamp(java.time.Instant.now());
                 event.setPayload(payload);
                 kafkaTemplate.send(KafkaTopics.USER_TOPIC, user.getId().toString(), event);
-                logger.info("Published NEW_SIGN_IN event for user: {}", user.getUsername());
+                log.info("Published NEW_SIGN_IN event for user: {}", user.getUsername());
             } catch (Exception ex) {
-                logger.error("Failed to publish NEW_SIGN_IN event for user: {}", user.getUsername(), ex);
+                log.error("Failed to publish NEW_SIGN_IN event for user: {}", user.getUsername(), ex);
             }
         }
         
@@ -331,7 +329,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     public String resendLoginOtp(String usernameOrEmail) throws AuthException {
-        logger.info("Resending login OTP for: {}", usernameOrEmail);
+        log.info("Resending login OTP for: {}", usernameOrEmail);
         try {
             Optional<User> userOptional = userService.findByUsername(usernameOrEmail);
             if (userOptional.isEmpty()) {
@@ -378,7 +376,7 @@ public class AuthServiceImpl implements AuthService {
 
     // Refresh token
     public AuthResponse refreshToken(String refreshToken) throws AuthException {
-        logger.info("Processing token refresh");
+        log.info("Processing token refresh");
 
         try {
             // Validate refresh token format
@@ -417,22 +415,22 @@ public class AuthServiceImpl implements AuthService {
             String newRefreshToken = jwtService.generateRefreshToken(user);
             Long expiresIn = jwtService.getExpirationTime();
 
-            logger.info("Token refresh successful for user: {}", user.getUsername());
+            log.info("Token refresh successful for user: {}", user.getUsername());
 
             return AuthResponse.of(newAccessToken, newRefreshToken, expiresIn, user);
 
         } catch (AuthException e) {
-            logger.warn("Token refresh failed: {}", e.getMessage());
+            log.warn("Token refresh failed: {}", e.getMessage());
             throw e;
         } catch (Exception e) {
-            logger.error("Unexpected error during token refresh: {}", e.getMessage());
+            log.error("Unexpected error during token refresh: {}", e.getMessage());
             throw new AuthException("Token refresh failed");
         }
     }
 
     // Validate token (for other microservices)
     public TokenValidationResponse validateToken(String token) {
-        logger.debug("Validating token");
+        log.debug("Validating token");
 
         try {
             // Basic token validation
@@ -462,39 +460,39 @@ public class AuthServiceImpl implements AuthService {
                 return TokenValidationResponse.invalid("User account is not active");
             }
 
-            logger.debug("Token validation successful for user: {}", username);
+            log.debug("Token validation successful for user: {}", username);
 
             return TokenValidationResponse.valid(userId, username, email, role);
 
         } catch (Exception e) {
-            logger.error("Token validation error: {}", e.getMessage());
+            log.error("Token validation error: {}", e.getMessage());
             return TokenValidationResponse.invalid("Token validation failed");
         }
     }
 
     // Logout (optional - for token blacklisting if needed)
     public void logout(String token) {
-        logger.info("Processing logout");
+        log.info("Processing logout");
 
         try {
             String username = jwtService.extractUsername(token);
-            logger.info("Logout successful for user: {}", username);
+            log.info("Logout successful for user: {}", username);
 
             // In a production system, you might want to blacklist the token here
             // For now, we'll just log the logout
 
         } catch (Exception e) {
-            logger.warn("Logout processing failed: {}", e.getMessage());
+            log.warn("Logout processing failed: {}", e.getMessage());
         }
     }
 
     // Change password (authenticated user)
     public void changePassword(UUID userId, String currentPassword, String newPassword) throws AuthException {
-        logger.info("Processing password change for user ID: {}", userId);
+        log.info("Processing password change for user ID: {}", userId);
 
         try {
             userService.updatePassword(userId, currentPassword, newPassword);
-            logger.info("Password change successful for user ID: {}", userId);
+            log.info("Password change successful for user ID: {}", userId);
             
             // Send password change notification
             try {
@@ -519,28 +517,28 @@ public class AuthServiceImpl implements AuthService {
                     event.setTimestamp(java.time.Instant.now());
                     event.setPayload(payload);
                     kafkaTemplate.send(KafkaTopics.USER_TOPIC, user.getId().toString(), event);
-                    logger.info("Published UserEvent for password change: {}", user.getId());
+                    log.info("Published UserEvent for password change: {}", user.getId());
                 }
             } catch (Exception ex) {
-                logger.error("Failed to send password change notification: {}", ex.getMessage());
+                log.error("Failed to send password change notification: {}", ex.getMessage());
             }
 
         } catch (Exception e) {
-            logger.error("Password change failed for user ID: {} - {}", userId, e.getMessage());
+            log.error("Password change failed for user ID: {} - {}", userId, e.getMessage());
             throw new AuthException("Password change failed: " + e.getMessage());
         }
     }
 
     // Verify email (if you implement email verification)
     public void verifyEmail(UUID userId) throws AuthException {
-        logger.info("Processing email verification for user ID: {}", userId);
+        log.info("Processing email verification for user ID: {}", userId);
 
         try {
             userService.verifyEmail(userId);
-            logger.info("Email verification successful for user ID: {}", userId);
+            log.info("Email verification successful for user ID: {}", userId);
 
         } catch (Exception e) {
-            logger.error("Email verification failed for user ID: {} - {}", userId, e.getMessage());
+            log.error("Email verification failed for user ID: {} - {}", userId, e.getMessage());
             throw new AuthException("Email verification failed");
         }
     }
@@ -567,9 +565,9 @@ public class AuthServiceImpl implements AuthService {
             
             String key = userId != null ? userId.toString() : email;
             kafkaTemplate.send(KafkaTopics.USER_TOPIC, key, event);
-            logger.info("Published UserEvent for OTP request to email: {}", email);
+            log.info("Published UserEvent for OTP request to email: {}", email);
         } catch (Exception ex) {
-            logger.error("Failed to publish OTP event: {}", ex.getMessage());
+            log.error("Failed to publish OTP event: {}", ex.getMessage());
         }
     }
 }

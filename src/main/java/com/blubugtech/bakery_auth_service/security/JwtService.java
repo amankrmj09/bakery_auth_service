@@ -1,10 +1,9 @@
 package com.blubugtech.bakery_auth_service.security;
 
+import lombok.extern.slf4j.Slf4j;
 import com.blubugtech.bakery_auth_service.entity.User;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -17,9 +16,8 @@ import java.util.UUID;
 import java.util.function.Function;
 
 @Service
+@Slf4j
 public class JwtService {
-
-    private static final Logger logger = LoggerFactory.getLogger(JwtService.class);
 
     @Value("${jwt.secret}")
     private String jwtSecret;
@@ -118,19 +116,19 @@ public class JwtService {
                     .parseSignedClaims(token)           // ✅ NEW: replaces parseClaimsJws()
                     .getPayload();                      // ✅ NEW: replaces getBody()
         } catch (ExpiredJwtException e) {
-            logger.warn("JWT token is expired: {}", e.getMessage());
+            log.warn("JWT token is expired: {}", e.getMessage());
             throw e;
         } catch (UnsupportedJwtException e) {
-            logger.error("JWT token is unsupported: {}", e.getMessage());
+            log.error("JWT token is unsupported: {}", e.getMessage());
             throw e;
         } catch (MalformedJwtException e) {
-            logger.error("Invalid JWT token: {}", e.getMessage());
+            log.error("Invalid JWT token: {}", e.getMessage());
             throw e;
         } catch (SecurityException e) {
-            logger.error("Invalid JWT signature: {}", e.getMessage());
+            log.error("Invalid JWT signature: {}", e.getMessage());
             throw e;
         } catch (IllegalArgumentException e) {
-            logger.error("JWT token compact of handler are invalid: {}", e.getMessage());
+            log.error("JWT token compact of handler are invalid: {}", e.getMessage());
             throw e;
         }
     }
@@ -150,7 +148,7 @@ public class JwtService {
             final String username = extractUsername(token);
             return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
         } catch (Exception e) {
-            logger.error("Token validation failed: {}", e.getMessage());
+            log.error("Token validation failed: {}", e.getMessage());
             return false;
         }
     }
@@ -164,7 +162,7 @@ public class JwtService {
                     .parseSignedClaims(token);          // ✅ NEW: replaces parseClaimsJws()
             return true;
         } catch (Exception e) {
-            logger.error("Token validation failed: {}", e.getMessage());
+            log.error("Token validation failed: {}", e.getMessage());
             return false;
         }
     }
