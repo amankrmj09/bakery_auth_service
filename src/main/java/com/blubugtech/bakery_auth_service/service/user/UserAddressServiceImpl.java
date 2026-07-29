@@ -7,6 +7,7 @@ import com.blubugtech.bakery_auth_service.entity.UserAddress;
 import com.blubugtech.bakery_auth_service.exception.AuthException;
 import com.blubugtech.bakery_auth_service.repository.UserAddressRepository;
 import com.blubugtech.bakery_auth_service.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,17 +17,13 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class UserAddressServiceImpl implements UserAddressService {
 
     private static final int MAX_ADDRESSES = 10;
-    
+
     private final UserAddressRepository addressRepository;
     private final UserRepository userRepository;
-
-    public UserAddressServiceImpl(UserAddressRepository addressRepository, UserRepository userRepository) {
-        this.addressRepository = addressRepository;
-        this.userRepository = userRepository;
-    }
 
     @Override
     public List<UserAddressResponse> getUserAddresses(UUID userId) {
@@ -53,7 +50,7 @@ public class UserAddressServiceImpl implements UserAddressService {
         address.setState(request.getState());
         address.setPostalCode(request.getPostalCode() != null ? request.getPostalCode() : request.getZipCode());
         address.setCountry(request.getCountry());
-        
+
         // If it's the first address or explicitly set as default, make it default
         if (currentCount == 0 || Boolean.TRUE.equals(request.getIsDefault())) {
             setAllAddressesToNonDefault(userId);
@@ -87,7 +84,7 @@ public class UserAddressServiceImpl implements UserAddressService {
     @Override
     public void deleteAddress(UUID userId, UUID addressId) {
         UserAddress address = getAddressIfBelongsToUser(userId, addressId);
-        
+
         boolean wasDefault = Boolean.TRUE.equals(address.getIsDefault());
         addressRepository.delete(address);
 
@@ -115,7 +112,7 @@ public class UserAddressServiceImpl implements UserAddressService {
     private UserAddress getAddressIfBelongsToUser(UUID userId, UUID addressId) {
         UserAddress address = addressRepository.findById(addressId)
                 .orElseThrow(() -> new AuthException("Address not found"));
-        
+
         if (!address.getUser().getId().equals(userId)) {
             throw new AuthException("Address does not belong to user");
         }

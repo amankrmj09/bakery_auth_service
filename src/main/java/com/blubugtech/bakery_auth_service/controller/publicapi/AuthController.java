@@ -78,7 +78,7 @@ public class AuthController {
         AuthResponse response = authService.login(request);
         
         if (response.getUser().getRole() != com.blubugtech.bakery_auth_service.entity.User.Role.ADMIN) {
-            throw new com.blubugtech.common.exception.security.UnauthorizedAccessException("Access denied. Admin role required.");
+            throw new org.blubakery.bakery_common_libs.exception.security.UnauthorizedAccessException("Access denied. Admin role required.");
         }
         return ResponseEntity.ok(response);
     }

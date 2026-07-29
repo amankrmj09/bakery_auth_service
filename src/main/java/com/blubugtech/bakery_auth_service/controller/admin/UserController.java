@@ -1,7 +1,5 @@
 package com.blubugtech.bakery_auth_service.controller.admin;
 
-import lombok.extern.slf4j.Slf4j;
-import com.blubugtech.bakery_auth_service.dto.auth.RegisterRequest;
 import com.blubugtech.bakery_auth_service.dto.user.UserProfileUpdateRequest;
 import com.blubugtech.bakery_auth_service.dto.user.UserResponse;
 import com.blubugtech.bakery_auth_service.entity.User;
@@ -9,13 +7,13 @@ import com.blubugtech.bakery_auth_service.exception.AuthException;
 import com.blubugtech.bakery_auth_service.security.JwtService;
 import com.blubugtech.bakery_auth_service.service.dashboard.DashboardStatisticsService;
 import com.blubugtech.bakery_auth_service.service.user.UserService;
-import org.blubakery.bakery_common_libs.contract.feign.MessageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.blubakery.bakery_common_libs.contract.feign.MessageResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -25,23 +23,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/users")
 @Tag(name = "User Management", description = "Endpoints for managing users and profiles")
-
-@AllArgsConstructor(access = AccessLevel.PACKAGE)
+@RequiredArgsConstructor
 @Slf4j
 public class UserController {
 
-    private UserService userService;
+    private final UserService userService;
 
-    private JwtService jwtService;
+    private final JwtService jwtService;
 
-    private DashboardStatisticsService dashboardStatisticsService;
+    private final DashboardStatisticsService dashboardStatisticsService;
 
     // Get user profile
     @GetMapping("/profile")
@@ -96,8 +92,8 @@ public class UserController {
         String requestingUserRole = extractRoleFromToken(request);
 
         // Allow if requesting own profile, if admin, or if system (inter-service communication)
-        if (!userId.equals(requestingUserId) && (requestingUserRole == null || 
-            (!requestingUserRole.equalsIgnoreCase("ADMIN") && !requestingUserRole.equalsIgnoreCase("SYSTEM")))) {
+        if (!userId.equals(requestingUserId) && (requestingUserRole == null ||
+                (!requestingUserRole.equalsIgnoreCase("ADMIN") && !requestingUserRole.equalsIgnoreCase("SYSTEM")))) {
             return ResponseEntity.status(403).build(); // Forbidden
         }
 
@@ -116,7 +112,7 @@ public class UserController {
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "DESC") String sortDir) {
-            
+
         log.info("Get all users request received (admin)");
 
         Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
@@ -138,7 +134,7 @@ public class UserController {
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "DESC") String sortDir) {
-            
+
         log.info("Search users request received (admin) with query: {}", query);
 
         Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
@@ -160,7 +156,7 @@ public class UserController {
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "DESC") String sortDir) {
-            
+
         log.info("Get users by role request received (admin) for role: {}", role);
 
         Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);

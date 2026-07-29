@@ -1,30 +1,32 @@
 package com.blubugtech.bakery_auth_service.service.user;
 
-import lombok.extern.slf4j.Slf4j;
 import com.blubugtech.bakery_auth_service.dto.auth.RegisterRequest;
 import com.blubugtech.bakery_auth_service.dto.user.UserProfileUpdateRequest;
 import com.blubugtech.bakery_auth_service.dto.user.UserResponse;
-import com.blubugtech.bakery_auth_service.mapper.UserMapper;
-import com.blubugtech.bakery_auth_service.service.dashboard.DashboardStatisticsService;
-
 import com.blubugtech.bakery_auth_service.entity.User;
 import com.blubugtech.bakery_auth_service.exception.AuthException;
+import com.blubugtech.bakery_auth_service.mapper.UserMapper;
 import com.blubugtech.bakery_auth_service.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.blubugtech.bakery_auth_service.service.dashboard.DashboardStatisticsService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @Transactional
 @Slf4j
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
@@ -37,14 +39,6 @@ public class UserServiceImpl implements UserService {
 
     @Value("${security.login.lockout-duration:300000}") // 5 minutes default
     private Long lockoutDuration;
-
-    @Autowired
-    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, DashboardStatisticsService dashboardStatisticsService, UserMapper userMapper) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.dashboardStatisticsService = dashboardStatisticsService;
-        this.userMapper = userMapper;
-    }
 
     // Create new user
     public User createUser(RegisterRequest request) throws AuthException {
@@ -61,8 +55,8 @@ public class UserServiceImpl implements UserService {
         }
 
         // Check if phone already exists
-        if (request.getPhone() != null && !request.getPhone().isEmpty() && 
-            userRepository.existsByPhone(request.getPhone())) {
+        if (request.getPhone() != null && !request.getPhone().isEmpty() &&
+                userRepository.existsByPhone(request.getPhone())) {
             throw new AuthException("Phone number already exists");
         }
 
@@ -82,9 +76,9 @@ public class UserServiceImpl implements UserService {
 
         User savedUser = userRepository.save(user);
         log.info("User created successfully with ID: {}", savedUser.getId());
-        
+
         dashboardStatisticsService.incrementUsers();
-        
+
         return savedUser;
     }
 
@@ -145,7 +139,7 @@ public class UserServiceImpl implements UserService {
         user.setLastName(request.getLastName());
         user.setPhone(request.getPhone());
         user.setAddress(request.getAddress());
-        
+
         if (request.getTwoFactorEnabled() != null) {
             user.setTwoFactorEnabled(request.getTwoFactorEnabled());
         }

@@ -1,10 +1,11 @@
 package com.blubugtech.bakery_auth_service.service.dashboard;
 
-import lombok.extern.slf4j.Slf4j;
 import com.blubugtech.bakery_auth_service.entity.DashboardStatistics;
 import com.blubugtech.bakery_auth_service.entity.DashboardStatisticsSnapshot;
 import com.blubugtech.bakery_auth_service.repository.DashboardStatisticsRepository;
 import com.blubugtech.bakery_auth_service.repository.DashboardStatisticsSnapshotRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,16 +19,11 @@ import java.util.Optional;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class DashboardStatisticsServiceImpl implements DashboardStatisticsService {
 
     private final DashboardStatisticsRepository dashboardStatisticsRepository;
     private final DashboardStatisticsSnapshotRepository snapshotRepository;
-
-    public DashboardStatisticsServiceImpl(DashboardStatisticsRepository dashboardStatisticsRepository,
-                                      DashboardStatisticsSnapshotRepository snapshotRepository) {
-        this.dashboardStatisticsRepository = dashboardStatisticsRepository;
-        this.snapshotRepository = snapshotRepository;
-    }
 
     @Transactional
     public DashboardStatistics getStatistics() {
@@ -57,17 +53,17 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
 
         Optional<DashboardStatisticsSnapshot> pastSnapshotOpt = snapshotRepository.findFirstBySnapshotDateLessThanEqualOrderBySnapshotDateDesc(pastDate);
         Optional<DashboardStatisticsSnapshot> previousSnapshotOpt = snapshotRepository.findFirstBySnapshotDateLessThanEqualOrderBySnapshotDateDesc(previousPeriodDate);
-        
+
         BigDecimal totalAtPastDate = pastSnapshotOpt.map(DashboardStatisticsSnapshot::getTotalRevenue).orElse(BigDecimal.ZERO);
         BigDecimal totalAtPreviousDate = previousSnapshotOpt.map(DashboardStatisticsSnapshot::getTotalRevenue).orElse(BigDecimal.ZERO);
 
         BigDecimal currentTotal = currentStats.getTotalRevenue();
-        
+
         BigDecimal currentPeriodRevenue = currentTotal.subtract(totalAtPastDate);
         if (currentPeriodRevenue.compareTo(BigDecimal.ZERO) < 0) {
             currentPeriodRevenue = BigDecimal.ZERO;
         }
-        
+
         BigDecimal previousPeriodRevenue = totalAtPastDate.subtract(totalAtPreviousDate);
         if (previousPeriodRevenue.compareTo(BigDecimal.ZERO) < 0) {
             previousPeriodRevenue = BigDecimal.ZERO;
@@ -84,26 +80,26 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
 
         List<DashboardStatisticsSnapshot> snapshots = snapshotRepository.findBySnapshotDateBetweenOrderBySnapshotDateAsc(pastDate, today);
         List<Map<String, Object>> chartData = new java.util.ArrayList<>();
-        
+
         BigDecimal previousCumulative = BigDecimal.ZERO;
         if (!snapshots.isEmpty()) {
-             Optional<DashboardStatisticsSnapshot> beforeStart = snapshotRepository.findFirstBySnapshotDateLessThanEqualOrderBySnapshotDateDesc(snapshots.get(0).getSnapshotDate().minusDays(1));
-             if (beforeStart.isPresent()) {
-                 previousCumulative = beforeStart.get().getTotalRevenue();
-             }
+            Optional<DashboardStatisticsSnapshot> beforeStart = snapshotRepository.findFirstBySnapshotDateLessThanEqualOrderBySnapshotDateDesc(snapshots.get(0).getSnapshotDate().minusDays(1));
+            if (beforeStart.isPresent()) {
+                previousCumulative = beforeStart.get().getTotalRevenue();
+            }
         }
 
         for (DashboardStatisticsSnapshot snap : snapshots) {
             Map<String, Object> dataPoint = new HashMap<>();
             dataPoint.put("name", snap.getSnapshotDate().toString()); // Simple ISO date string
-            
+
             BigDecimal currentCumulative = snap.getTotalRevenue();
             BigDecimal dailyRevenue = currentCumulative.subtract(previousCumulative);
             if (dailyRevenue.compareTo(BigDecimal.ZERO) < 0) {
-                 dailyRevenue = BigDecimal.ZERO;
+                dailyRevenue = BigDecimal.ZERO;
             }
             dataPoint.put("revenue", dailyRevenue);
-            
+
             chartData.add(dataPoint);
             previousCumulative = currentCumulative;
         }
@@ -122,7 +118,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
         LocalDate today = LocalDate.now();
         DashboardStatisticsSnapshot snapshot = snapshotRepository.findBySnapshotDate(today)
                 .orElse(DashboardStatisticsSnapshot.builder().snapshotDate(today).build());
-        
+
         snapshot.setTotalUsers(stats.getTotalUsers());
         snapshot.setActiveOrders(stats.getActiveOrders());
         snapshot.setTotalRevenue(stats.getTotalRevenue());

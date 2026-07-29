@@ -1,38 +1,44 @@
 package com.blubugtech.bakery_auth_service.service.auth;
 
-import lombok.extern.slf4j.Slf4j;
-import com.blubugtech.bakery_auth_service.dto.auth.AuthResponse;
-import com.blubugtech.bakery_auth_service.dto.auth.LoginRequest;
-import com.blubugtech.bakery_auth_service.dto.auth.RegisterRequest;
+import com.blubugtech.bakery_auth_service.dto.auth.*;
 import com.blubugtech.bakery_auth_service.entity.User;
-import com.blubugtech.bakery_auth_service.dto.auth.TokenValidationResponse;
-import com.blubugtech.bakery_auth_service.service.user.UserService;
-import com.blubugtech.bakery_auth_service.security.JwtService;
 import com.blubugtech.bakery_auth_service.exception.*;
-import lombok.Getter;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.blubugtech.bakery_auth_service.security.CustomUserDetails;
+import com.blubugtech.bakery_auth_service.security.JwtService;
+import com.blubugtech.bakery_auth_service.service.user.UserService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.blubakery.bakery_common_libs.constants.KafkaTopics;
+import org.blubakery.bakery_common_libs.contract.messaging.UserPayload;
+import org.blubakery.bakery_common_libs.event.UserEvent;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.blubakery.bakery_common_libs.event.UserEvent;
-import org.blubakery.bakery_common_libs.constants.KafkaTopics;
-import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import com.blubugtech.bakery_auth_service.dto.auth.*;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 @Transactional
 @Slf4j
+@RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
     final private UserService userService;
 
     final private JwtService jwtService;
-    
+
     final private KafkaTemplate<String, Object> kafkaTemplate;
 
     private final org.springframework.security.authentication.AuthenticationManager authenticationManager;
@@ -40,16 +46,6 @@ public class AuthServiceImpl implements AuthService {
     private final AuthOtpService authOtpService;
     private final ObjectMapper objectMapper;
 
-    @org.springframework.beans.factory.annotation.Value("${kafka.topic.user-events:user-events}")
-    
-    public AuthServiceImpl(UserService userService, JwtService jwtService, KafkaTemplate<String, Object> kafkaTemplate, org.springframework.security.authentication.AuthenticationManager authenticationManager, AuthOtpService authOtpService, ObjectMapper objectMapper) {
-        this.userService = userService;
-        this.jwtService = jwtService;
-        this.kafkaTemplate = kafkaTemplate;
-        this.authenticationManager = authenticationManager;
-        this.authOtpService = authOtpService;
-        this.objectMapper = objectMapper;
-    }
 
     // User registration
     public AuthResponse register(RegisterRequest request) throws AuthException {
@@ -65,10 +61,10 @@ public class AuthServiceImpl implements AuthService {
             Long expiresIn = jwtService.getExpirationTime();
 
             log.info("Registration successful for user: {}", user.getUsername());
-            
+
             // Send welcome notification via Kafka
             try {
-                com.blubugtech.common.contract.messaging.UserPayload payload = com.blubugtech.common.contract.messaging.UserPayload.builder()
+                UserPayload payload = UserPayload.builder()
                         .userId(user.getId())
                         .email(user.getEmail())
                         .firstName(user.getFirstName())
@@ -115,15 +111,15 @@ public class AuthServiceImpl implements AuthService {
                                 request.getPassword()
                         )
                 );
-            } catch (org.springframework.security.core.AuthenticationException e) {
+            } catch (AuthenticationException e) {
                 // Record failed login attempt
                 userService.recordFailedLogin(request.getUsernameOrEmail());
                 throw new InvalidCredentialsException("Invalid credentials");
             }
 
             // Get user from authentication context
-            com.blubugtech.bakery_auth_service.security.CustomUserDetails userDetails = 
-                (com.blubugtech.bakery_auth_service.security.CustomUserDetails) authentication.getPrincipal();
+            CustomUserDetails userDetails =
+                    (CustomUserDetails) authentication.getPrincipal();
             User user = userDetails.getUser();
 
             // Record successful login
@@ -191,31 +187,31 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
-    public com.blubugtech.bakery_auth_service.dto.auth.LoginInitResponse initiateLogin(LoginRequest request) throws AuthException {
+    public LoginInitResponse initiateLogin(LoginRequest request) throws AuthException {
         try {
             if (userService.isAccountLocked(request.getUsernameOrEmail())) {
                 throw new AccountLockedException("Account locked");
             }
             // Verify password for 2FA
-            org.springframework.security.core.Authentication authentication;
+            Authentication authentication;
             try {
                 authentication = authenticationManager.authenticate(
-                        new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        new UsernamePasswordAuthenticationToken(
                                 request.getUsernameOrEmail(), request.getPassword()
                         )
                 );
-            } catch (org.springframework.security.core.AuthenticationException e) {
+            } catch (AuthenticationException e) {
                 userService.recordFailedLogin(request.getUsernameOrEmail());
                 throw new InvalidCredentialsException("Invalid credentials");
             }
-            com.blubugtech.bakery_auth_service.security.CustomUserDetails userDetails = 
-                (com.blubugtech.bakery_auth_service.security.CustomUserDetails) authentication.getPrincipal();
+            CustomUserDetails userDetails =
+                    (CustomUserDetails) authentication.getPrincipal();
             User user = userDetails.getUser();
-            
+
             if (user.getTwoFactorEnabled() != null && !user.getTwoFactorEnabled()) {
                 // Bypass 2FA
                 userService.recordSuccessfulLogin(user.getId());
-                
+
                 if (user.getLoginNotificationsEnabled() != null && user.getLoginNotificationsEnabled()) {
                     try {
                         String ipAddress = "Unknown IP";
@@ -228,7 +224,7 @@ public class AuthServiceImpl implements AuthService {
                             }
                         }
 
-                        com.blubugtech.common.contract.messaging.UserPayload payload = com.blubugtech.common.contract.messaging.UserPayload.builder()
+                        org.blubakery.bakery_common_libs.contract.messaging.UserPayload payload = org.blubakery.bakery_common_libs.contract.messaging.UserPayload.builder()
                                 .userId(user.getId())
                                 .email(user.getEmail())
                                 .firstName(user.getFirstName())
@@ -238,7 +234,7 @@ public class AuthServiceImpl implements AuthService {
                                 .location("Unknown Location")
                                 .timestamp(java.time.LocalDateTime.now())
                                 .build();
-                        com.blubugtech.common.event.UserEvent event = new com.blubugtech.common.event.UserEvent();
+                        org.blubakery.bakery_common_libs.event.UserEvent event = new org.blubakery.bakery_common_libs.event.UserEvent();
                         event.setEventId(java.util.UUID.randomUUID().toString());
                         event.setEventType("NEW_SIGN_IN");
                         event.setTimestamp(java.time.Instant.now());
@@ -249,22 +245,22 @@ public class AuthServiceImpl implements AuthService {
                         log.error("Failed to publish NEW_SIGN_IN event for user: {}", user.getUsername(), ex);
                     }
                 }
-                
+
                 String accessToken = jwtService.generateAccessToken(user);
                 String refreshToken = jwtService.generateRefreshToken(user);
                 AuthResponse authResponse = AuthResponse.of(accessToken, refreshToken, jwtService.getExpirationTime(), user);
-                
+
                 return com.blubugtech.bakery_auth_service.dto.auth.LoginInitResponse.builder()
                         .requiresOtp(false)
                         .message("Login successful")
                         .authResponse(authResponse)
                         .build();
             }
-            
+
             String otp = authOtpService.generateAndSaveLoginOtp(user.getEmail());
             sendOtpEvent(user.getId(), user.getEmail(), user.getFirstName(), user.getLastName(), user.getPhone(), otp);
-            
-            return com.blubugtech.bakery_auth_service.dto.auth.LoginInitResponse.builder()
+
+            return LoginInitResponse.builder()
                     .requiresOtp(true)
                     .message(otp)
                     .build();
@@ -288,20 +284,20 @@ public class AuthServiceImpl implements AuthService {
         }
 
         userService.recordSuccessfulLogin(user.getId());
-        
+
         if (user.getLoginNotificationsEnabled() != null && user.getLoginNotificationsEnabled()) {
             try {
                 String ipAddress = "Unknown IP";
-                org.springframework.web.context.request.RequestAttributes requestAttributes = org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
-                if (requestAttributes instanceof org.springframework.web.context.request.ServletRequestAttributes) {
-                    jakarta.servlet.http.HttpServletRequest httpRequest = ((org.springframework.web.context.request.ServletRequestAttributes) requestAttributes).getRequest();
+                RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
+                if (requestAttributes instanceof ServletRequestAttributes) {
+                    HttpServletRequest httpRequest = ((ServletRequestAttributes) requestAttributes).getRequest();
                     ipAddress = httpRequest.getHeader("X-Forwarded-For");
                     if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
                         ipAddress = httpRequest.getRemoteAddr();
                     }
                 }
 
-                com.blubugtech.common.contract.messaging.UserPayload payload = com.blubugtech.common.contract.messaging.UserPayload.builder()
+                UserPayload payload = UserPayload.builder()
                         .userId(user.getId())
                         .email(user.getEmail())
                         .firstName(user.getFirstName())
@@ -311,10 +307,10 @@ public class AuthServiceImpl implements AuthService {
                         .location("Unknown Location") // Typically you'd use a GeoIP service here
                         .timestamp(java.time.LocalDateTime.now())
                         .build();
-                com.blubugtech.common.event.UserEvent event = new com.blubugtech.common.event.UserEvent();
-                event.setEventId(java.util.UUID.randomUUID().toString());
+                UserEvent event = new UserEvent();
+                event.setEventId(UUID.randomUUID().toString());
                 event.setEventType("NEW_SIGN_IN");
-                event.setTimestamp(java.time.Instant.now());
+                event.setTimestamp(Instant.now());
                 event.setPayload(payload);
                 kafkaTemplate.send(KafkaTopics.USER_TOPIC, user.getId().toString(), event);
                 log.info("Published NEW_SIGN_IN event for user: {}", user.getUsername());
@@ -322,7 +318,7 @@ public class AuthServiceImpl implements AuthService {
                 log.error("Failed to publish NEW_SIGN_IN event for user: {}", user.getUsername(), ex);
             }
         }
-        
+
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
         return AuthResponse.of(accessToken, refreshToken, jwtService.getExpirationTime(), user);
@@ -367,7 +363,7 @@ public class AuthServiceImpl implements AuthService {
         }
         Optional<User> userOpt = userService.findByEmail(request.getEmail());
         if (userOpt.isEmpty()) throw new UserNotFoundException("User not found");
-        // For reset, we update without requiring current password. We need a method in userService for direct password update or use existing if it doesn't strictly check old password. 
+        // TODO: For reset, we update without requiring current password. We need a method in userService for direct password update or use existing if it doesn't strictly check old password.
         // We will call the repo directly or add a direct update method to userService.
         User user = userOpt.get();
         // Since we are inside auth service, we can use userService.resetPassword (assuming we create it) or just update it via another means.
@@ -493,7 +489,7 @@ public class AuthServiceImpl implements AuthService {
         try {
             userService.updatePassword(userId, currentPassword, newPassword);
             log.info("Password change successful for user ID: {}", userId);
-            
+
             // Send password change notification
             try {
                 Optional<User> userOpt = userService.findById(userId);
@@ -502,7 +498,7 @@ public class AuthServiceImpl implements AuthService {
                     Map<String, Object> notificationReq = new HashMap<>();
                     notificationReq.put("type", "EMAIL");
                     notificationReq.put("recipientEmail", user.getEmail());
-                    com.blubugtech.common.contract.messaging.UserPayload payload = com.blubugtech.common.contract.messaging.UserPayload.builder()
+                    org.blubakery.bakery_common_libs.contract.messaging.UserPayload payload = org.blubakery.bakery_common_libs.contract.messaging.UserPayload.builder()
                             .userId(user.getId())
                             .email(user.getEmail())
                             .firstName(user.getFirstName())
@@ -546,7 +542,7 @@ public class AuthServiceImpl implements AuthService {
 
     private void sendOtpEvent(UUID userId, String email, String firstName, String lastName, String phone, String otp) {
         try {
-            com.blubugtech.common.contract.messaging.UserPayload payload = com.blubugtech.common.contract.messaging.UserPayload.builder()
+            org.blubakery.bakery_common_libs.contract.messaging.UserPayload payload = org.blubakery.bakery_common_libs.contract.messaging.UserPayload.builder()
                     .userId(userId)
                     .email(email)
                     .firstName(firstName)
@@ -562,7 +558,7 @@ public class AuthServiceImpl implements AuthService {
             event.setEventType("OTP_REQUESTED");
             event.setTimestamp(java.time.Instant.now());
             event.setPayload(payload);
-            
+
             String key = userId != null ? userId.toString() : email;
             kafkaTemplate.send(KafkaTopics.USER_TOPIC, key, event);
             log.info("Published UserEvent for OTP request to email: {}", email);
