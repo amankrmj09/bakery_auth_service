@@ -2,18 +2,18 @@ package com.blubugtech.bakery_auth_service.controller.admin;
 
 import com.blubugtech.bakery_auth_service.dto.user.UserProfileUpdateRequest;
 import com.blubugtech.bakery_auth_service.dto.user.UserResponse;
+import com.blubugtech.bakery_auth_service.dto.user.UpdateRoleRequest;
+import com.blubugtech.bakery_auth_service.dto.user.UpdateStatusRequest;
 import com.blubugtech.bakery_auth_service.entity.User;
 import com.blubugtech.bakery_auth_service.exception.AuthException;
-import com.blubugtech.bakery_auth_service.security.JwtService;
 import com.blubugtech.bakery_auth_service.service.dashboard.DashboardStatisticsService;
 import com.blubugtech.bakery_auth_service.service.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.blubakery.bakery_common_libs.contract.feign.MessageResponse;
+import org.blubakery.common.feign.contract.feign.MessageResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -21,6 +21,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PagedModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -35,21 +36,16 @@ public class UserController {
 
     private final UserService userService;
 
-    private final JwtService jwtService;
-
     private final DashboardStatisticsService dashboardStatisticsService;
 
     // Get user profile
     @GetMapping("/profile")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get current user profile")
-    public ResponseEntity<UserResponse> getUserProfile(HttpServletRequest request) throws AuthException {
+    public ResponseEntity<UserResponse> getUserProfile(Authentication authentication) throws AuthException {
         log.info("Get user profile request received");
 
-        UUID userId = extractUserIdFromToken(request);
-        if (userId == null) {
-            return ResponseEntity.badRequest().build();
-        }
+        UUID userId = UUID.fromString(authentication.getName());
 
         UserResponse userResponse = userService.getUserProfile(userId);
 
@@ -63,14 +59,11 @@ public class UserController {
     @Operation(summary = "Update current user profile")
     public ResponseEntity<UserResponse> updateUserProfile(
             @Valid @RequestBody UserProfileUpdateRequest request,
-            HttpServletRequest httpRequest) throws AuthException {
+            Authentication authentication) throws AuthException {
 
         log.info("Update user profile request received");
 
-        UUID userId = extractUserIdFromToken(httpRequest);
-        if (userId == null) {
-            return ResponseEntity.badRequest().build();
-        }
+        UUID userId = UUID.fromString(authentication.getName());
 
         UserResponse userResponse = userService.updateUserProfile(userId, request);
 
@@ -80,22 +73,12 @@ public class UserController {
 
     // Get user by ID (Admin or self only)
     @GetMapping("/{userId}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SYSTEM') or #userId.toString() == authentication.name")
     @Operation(summary = "Get user by ID")
     public ResponseEntity<UserResponse> getUserById(
-            @PathVariable UUID userId,
-            HttpServletRequest request) throws AuthException {
+            @PathVariable UUID userId) throws AuthException {
 
         log.info("Get user by ID request received for user ID: {}", userId);
-
-        UUID requestingUserId = extractUserIdFromToken(request);
-        String requestingUserRole = extractRoleFromToken(request);
-
-        // Allow if requesting own profile, if admin, or if system (inter-service communication)
-        if (!userId.equals(requestingUserId) && (requestingUserRole == null ||
-                (!requestingUserRole.equalsIgnoreCase("ADMIN") && !requestingUserRole.equalsIgnoreCase("SYSTEM")))) {
-            return ResponseEntity.status(403).build(); // Forbidden
-        }
 
         UserResponse userResponse = userService.getUserProfile(userId);
 
@@ -175,19 +158,13 @@ public class UserController {
     @Operation(summary = "Update user role (Admin)")
     public ResponseEntity<MessageResponse> updateUserRole(
             @PathVariable UUID userId,
-            @RequestBody Map<String, String> request) {
+            @Valid @RequestBody UpdateRoleRequest request) {
 
         log.info("Update user role request received (admin) for user ID: {}", userId);
 
-        String roleStr = request.get("role");
-        if (roleStr == null) {
-            return ResponseEntity.badRequest().build();
-        }
+        userService.updateUserRole(userId, request.role());
 
-        User.Role role = User.Role.valueOf(roleStr.toUpperCase());
-        userService.updateUserRole(userId, role);
-
-        log.info("User role updated to {} for user ID: {}", role, userId);
+        log.info("User role updated to {} for user ID: {}", request.role(), userId);
         return ResponseEntity.ok(new MessageResponse("User role updated successfully"));
     }
 
@@ -197,19 +174,13 @@ public class UserController {
     @Operation(summary = "Update user status (Admin)")
     public ResponseEntity<MessageResponse> updateUserStatus(
             @PathVariable UUID userId,
-            @RequestBody Map<String, String> request) {
+            @Valid @RequestBody UpdateStatusRequest request) {
 
         log.info("Update user status request received (admin) for user ID: {}", userId);
 
-        String statusStr = request.get("status");
-        if (statusStr == null) {
-            return ResponseEntity.badRequest().build();
-        }
+        userService.updateUserStatus(userId, request.status());
 
-        User.UserStatus status = User.UserStatus.valueOf(statusStr.toUpperCase());
-        userService.updateUserStatus(userId, status);
-
-        log.info("User status updated to {} for user ID: {}", status, userId);
+        log.info("User status updated to {} for user ID: {}", request.status(), userId);
         return ResponseEntity.ok(new MessageResponse("User status updated successfully"));
     }
 
@@ -261,28 +232,5 @@ public class UserController {
         log.info("Get dashboard statistics request received (admin) for timeframe: {}", timeframe);
         Map<String, Object> stats = dashboardStatisticsService.getStatisticsWithGrowth(timeframe);
         return ResponseEntity.ok(stats);
-    }
-
-    // Utility methods
-    private UUID extractUserIdFromToken(HttpServletRequest request) {
-        String authHeader = request.getHeader("Authorization");
-        String token = jwtService.extractTokenFromHeader(authHeader);
-
-        if (token == null || !jwtService.validateToken(token)) {
-            return null;
-        }
-
-        return jwtService.extractUserId(token);
-    }
-
-    private String extractRoleFromToken(HttpServletRequest request) {
-        String authHeader = request.getHeader("Authorization");
-        String token = jwtService.extractTokenFromHeader(authHeader);
-
-        if (token == null || !jwtService.validateToken(token)) {
-            return null;
-        }
-
-        return jwtService.extractRole(token);
     }
 }

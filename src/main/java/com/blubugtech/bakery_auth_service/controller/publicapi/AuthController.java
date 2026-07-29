@@ -14,11 +14,12 @@ import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 
-import org.blubakery.bakery_common_libs.contract.feign.MessageResponse;
-import org.blubakery.bakery_common_libs.exception.security.UnauthenticatedException;
-import org.blubakery.bakery_common_libs.exception.security.InvalidTokenException;
+import org.blubakery.common.feign.contract.feign.MessageResponse;
+import org.blubakery.common.security.exception.security.UnauthenticatedException;
+import org.blubakery.common.security.exception.security.InvalidTokenException;
 import java.util.Map;
 import java.util.UUID;
+import org.springframework.security.core.Authentication;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -78,7 +79,7 @@ public class AuthController {
         AuthResponse response = authService.login(request);
         
         if (response.getUser().getRole() != com.blubugtech.bakery_auth_service.entity.User.Role.ADMIN) {
-            throw new org.blubakery.bakery_common_libs.exception.security.UnauthorizedAccessException("Access denied. Admin role required.");
+            throw new org.blubakery.common.core.exception.security.UnauthorizedAccessException("Access denied. Admin role required.");
         }
         return ResponseEntity.ok(response);
     }
@@ -193,25 +194,14 @@ public class AuthController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Change user password")
     public ResponseEntity<MessageResponse> changePassword(
-            @RequestBody Map<String, String> request,
-            HttpServletRequest httpRequest) throws AuthException {
+            @Valid @RequestBody ChangePasswordRequest request,
+            Authentication authentication) throws AuthException {
 
         log.info("Password change request received");
 
-        String authHeader = httpRequest.getHeader("Authorization");
-        String token = jwtService.extractTokenFromHeader(authHeader);
-
-        if (token == null) {
-            throw new UnauthenticatedException("Authentication required");
-        }
-
-        UUID userId = jwtService.extractUserId(token);
-        String currentPassword = request.get("currentPassword");
-        String newPassword = request.get("newPassword");
-
-        if (currentPassword == null || newPassword == null) {
-            throw new IllegalArgumentException("Current password and new password are required");
-        }
+        UUID userId = UUID.fromString(authentication.getName());
+        String currentPassword = request.currentPassword();
+        String newPassword = request.newPassword();
 
         authService.changePassword(userId, currentPassword, newPassword);
 
