@@ -23,11 +23,16 @@ jwt:
   secret: ${JWT_SECRET}
 app:
   admin:
+    seed-enabled: ${ADMIN_SEED_ENABLED:false}
     first-name: ${ADMIN_FIRST_NAME}
     last-name: ${ADMIN_LAST_NAME}
     email: ${ADMIN_EMAIL}
     password: ${ADMIN_PASSWORD}
     phone: ${ADMIN_PHONE}
+security:
+  login:
+    max-attempts: ${LOGIN_MAX_ATTEMPTS:5}
+    lockout-duration: ${LOGIN_LOCKOUT_DURATION:300000}
 
 springdoc:
   api-docs:

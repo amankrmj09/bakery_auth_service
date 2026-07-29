@@ -17,8 +17,13 @@ jwt:
   secret: bWVnYVN1cGVyU2VjcmV0S2V5Rm9yQmFrZXJ5QXV0aFNlcnZpY2UyMDI1
 app:
   admin:
+    seed-enabled: false
     first-name: Super
     last-name: Admin
     email: admin@bakery.com
     password: Admin@123
     phone: 1234567890
+security:
+  login:
+    max-attempts: 5
+    lockout-duration: 300000
