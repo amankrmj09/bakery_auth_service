@@ -25,6 +25,7 @@ app:
   admin:
     seed-enabled: ${ADMIN_SEED_ENABLED:false}
     first-name: ${ADMIN_FIRST_NAME}
+    username: ${ADMIN_USERNAME}
     last-name: ${ADMIN_LAST_NAME}
     email: ${ADMIN_EMAIL}
     password: ${ADMIN_PASSWORD}

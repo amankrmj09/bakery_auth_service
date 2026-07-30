@@ -22,6 +22,9 @@ public class AdminSeederConfig {
     @Value("${app.admin.first-name:Super}")
     private String adminFirstName;
 
+    @Value("${app.admin.username:admin}")
+    private String adminUsername;
+
     @Value("${app.admin.last-name:Admin}")
     private String adminLastName;
 
@@ -42,7 +45,7 @@ public class AdminSeederConfig {
             }
 
             User admin = new User(
-                    "admin",
+                    adminUsername,
                     adminEmail,
                     passwordEncoder.encode(adminPassword),
                     adminFirstName,
