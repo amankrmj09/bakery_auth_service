@@ -28,6 +28,9 @@ public class StoreSettings {
     @Builder.Default
     private Boolean isAcceptingOrders = true;
 
+    @Column(name = "admin_notification_email", length = 255)
+    private String adminNotificationEmail;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

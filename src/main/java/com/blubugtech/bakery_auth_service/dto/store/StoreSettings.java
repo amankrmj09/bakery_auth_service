@@ -5,4 +5,5 @@ import lombok.Data;
 @Data
 public class StoreSettings {
     private Boolean isAcceptingOrders;
+    private String adminNotificationEmail;
 }
