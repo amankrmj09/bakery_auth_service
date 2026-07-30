@@ -41,8 +41,12 @@ public class StoreSettingsServiceImpl implements StoreSettingsService {
     public StoreSettings updateStoreSettings(StoreSettings updatedSettings) {
         log.info("Updating store settings");
         com.blubugtech.bakery_auth_service.entity.StoreSettings currentSettings = getSettings();
-        currentSettings.setIsAcceptingOrders(updatedSettings.getIsAcceptingOrders());
-        currentSettings.setAdminNotificationEmail(updatedSettings.getAdminNotificationEmail());
+        if (updatedSettings.getIsAcceptingOrders() != null) {
+            currentSettings.setIsAcceptingOrders(updatedSettings.getIsAcceptingOrders());
+        }
+        if (updatedSettings.getAdminNotificationEmail() != null) {
+            currentSettings.setAdminNotificationEmail(updatedSettings.getAdminNotificationEmail());
+        }
         
         com.blubugtech.bakery_auth_service.entity.StoreSettings savedSettings = storeSettingsRepository.save(currentSettings);
         
