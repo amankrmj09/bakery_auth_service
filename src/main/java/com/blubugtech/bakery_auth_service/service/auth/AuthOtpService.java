@@ -7,7 +7,10 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import com.blubugtech.bakery_auth_service.constant.AuthConstants;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
 public class AuthOtpService {
 
     private final StringRedisTemplate redisTemplate;
@@ -24,7 +27,7 @@ public class AuthOtpService {
         String otp = String.format("%06d", random.nextInt(999999));
         // Save request JSON as value, with OTP appended or stored separately
         redisTemplate.opsForValue().set(AuthConstants.REG_PREFIX + email, otp + "|" + requestJson, OTP_VALIDITY_MINUTES, TimeUnit.MINUTES);
-        System.out.println("Generated Registration OTP for " + email + ": " + otp);
+        log.info("Generated Registration OTP for {}: {}", email, otp);
         return otp;
     }
     
@@ -48,14 +51,14 @@ public class AuthOtpService {
         String requestJson = data.substring(7);
         String newOtp = String.format("%06d", random.nextInt(999999));
         redisTemplate.opsForValue().set(AuthConstants.REG_PREFIX + email, newOtp + "|" + requestJson, OTP_VALIDITY_MINUTES, TimeUnit.MINUTES);
-        System.out.println("Resent Registration OTP for " + email + ": " + newOtp);
+        log.info("Resent Registration OTP for {}: {}", email, newOtp);
         return newOtp;
     }
 
     public String generateAndSaveLoginOtp(String email) {
         String otp = String.format("%06d", random.nextInt(999999));
         redisTemplate.opsForValue().set(AuthConstants.LOGIN_PREFIX + email, otp, OTP_VALIDITY_MINUTES, TimeUnit.MINUTES);
-        System.out.println("Generated Login OTP for " + email + ": " + otp);
+        log.info("Generated Login OTP for {}: {}", email, otp);
         return otp;
     }
 
@@ -79,7 +82,7 @@ public class AuthOtpService {
     public String generateAndSaveResetOtp(String email) {
         String otp = String.format("%06d", random.nextInt(999999));
         redisTemplate.opsForValue().set(AuthConstants.RESET_PREFIX + email, otp, OTP_VALIDITY_MINUTES, TimeUnit.MINUTES);
-        System.out.println("Generated Reset OTP for " + email + ": " + otp);
+        log.info("Generated Reset OTP for {}: {}", email, otp);
         return otp;
     }
 

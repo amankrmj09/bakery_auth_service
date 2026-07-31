@@ -81,13 +81,13 @@ public class AuthServiceImpl implements AuthService {
                 kafkaTemplate.send(KafkaTopics.USER_TOPIC, user.getId().toString(), event);
                 log.info("Published UserEvent for registered user: {}", user.getId());
             } catch (Exception ex) {
-                log.error("Failed to publish UserEvent: {}", ex.getMessage());
+                log.error("Failed to publish UserEvent", ex);
             }
 
             return AuthResponse.of(accessToken, refreshToken, expiresIn, user);
 
         } catch (Exception e) {
-            log.error("Registration failed for username: {} - {}", request.getUsername(), e.getMessage());
+            log.error("Registration failed for username: {}", request.getUsername(), e);
             throw new AuthException("Registration failed: " + e.getMessage());
         }
     }
@@ -112,6 +112,7 @@ public class AuthServiceImpl implements AuthService {
                         )
                 );
             } catch (AuthenticationException e) {
+                log.error("Authentication failed for user: {}", request.getUsernameOrEmail(), e);
                 // Record failed login attempt
                 userService.recordFailedLogin(request.getUsernameOrEmail());
                 throw new InvalidCredentialsException("Invalid credentials");
@@ -135,10 +136,10 @@ public class AuthServiceImpl implements AuthService {
             return AuthResponse.of(accessToken, refreshToken, expiresIn, user);
 
         } catch (AuthException e) {
-            log.warn("Login failed for user: {} - {}", request.getUsernameOrEmail(), e.getMessage());
+            log.error("Login failed for user: {}", request.getUsernameOrEmail(), e);
             throw e;
         } catch (Exception e) {
-            log.error("Unexpected error during login for user: {} - {}", request.getUsernameOrEmail(), e.getMessage());
+            log.error("Unexpected error during login for user: {}", request.getUsernameOrEmail(), e);
             throw new AuthException("Login failed due to an unexpected error");
         }
     }
@@ -154,6 +155,7 @@ public class AuthServiceImpl implements AuthService {
             sendOtpEvent(null, request.getEmail(), request.getFirstName(), request.getLastName(), request.getPhone(), otp);
             return otp;
         } catch (Exception e) {
+            log.error("Failed to initiate registration", e);
             throw new AuthException("Failed to initiate registration");
         }
     }
@@ -167,6 +169,7 @@ public class AuthServiceImpl implements AuthService {
             RegisterRequest registerRequest = objectMapper.readValue(requestJson, RegisterRequest.class);
             return register(registerRequest); // Re-use existing register flow
         } catch (Exception e) {
+            log.error("OTP Verification failed", e);
             throw new AuthException("OTP Verification failed");
         }
     }
@@ -181,8 +184,10 @@ public class AuthServiceImpl implements AuthService {
             sendOtpEvent(null, email, null, null, null, otp);
             return otp;
         } catch (AuthException e) {
+            log.error("AuthException while resending registration OTP", e);
             throw e;
         } catch (Exception e) {
+            log.error("Failed to resend registration OTP", e);
             throw new AuthException("Failed to resend registration OTP");
         }
     }
@@ -201,6 +206,7 @@ public class AuthServiceImpl implements AuthService {
                         )
                 );
             } catch (AuthenticationException e) {
+                log.error("Authentication failed", e);
                 userService.recordFailedLogin(request.getUsernameOrEmail());
                 throw new InvalidCredentialsException("Invalid credentials");
             }
@@ -265,8 +271,10 @@ public class AuthServiceImpl implements AuthService {
                     .message(otp)
                     .build();
         } catch (AuthException e) {
+            log.error("Auth exception during initiate login", e);
             throw e;
         } catch (Exception e) {
+            log.error("Failed to initiate login", e);
             throw new AuthException("Failed to initiate login");
         }
     }
@@ -342,8 +350,10 @@ public class AuthServiceImpl implements AuthService {
             sendOtpEvent(user.getId(), user.getEmail(), user.getFirstName(), user.getLastName(), user.getPhone(), otp);
             return otp;
         } catch (AuthException e) {
+            log.error("Auth exception during resend login OTP", e);
             throw e;
         } catch (Exception e) {
+            log.error("Failed to resend login OTP", e);
             throw new AuthException("Failed to resend login OTP");
         }
     }
@@ -362,6 +372,7 @@ public class AuthServiceImpl implements AuthService {
                         )
                     );
             } catch (AuthenticationException e) {
+                log.error("Authentication failed", e);
                 userService.recordFailedLogin(request.getUsernameOrEmail());
                 throw new InvalidCredentialsException("Invalid credentials");
             }
@@ -381,8 +392,10 @@ public class AuthServiceImpl implements AuthService {
                     .message(otp)
                     .build();
         } catch (AuthException e) {
+            log.error("Auth exception during initiate admin login", e);
             throw e;
         } catch (Exception e) {
+            log.error("Failed to initiate admin login", e);
             throw new AuthException("Failed to initiate admin login");
         }
     }
@@ -512,10 +525,10 @@ public class AuthServiceImpl implements AuthService {
             return AuthResponse.of(newAccessToken, newRefreshToken, expiresIn, user);
 
         } catch (AuthException e) {
-            log.warn("Token refresh failed: {}", e.getMessage());
+            log.error("Token refresh failed", e);
             throw e;
         } catch (Exception e) {
-            log.error("Unexpected error during token refresh: {}", e.getMessage());
+            log.error("Unexpected error during token refresh", e);
             throw new AuthException("Token refresh failed");
         }
     }
@@ -557,7 +570,7 @@ public class AuthServiceImpl implements AuthService {
             return TokenValidationResponse.valid(userId, username, email, role);
 
         } catch (Exception e) {
-            log.error("Token validation error: {}", e.getMessage());
+            log.error("Token validation error", e);
             return TokenValidationResponse.invalid("Token validation failed");
         }
     }
@@ -574,7 +587,7 @@ public class AuthServiceImpl implements AuthService {
             // For now, we'll just log the logout
 
         } catch (Exception e) {
-            log.warn("Logout processing failed: {}", e.getMessage());
+            log.error("Logout processing failed", e);
         }
     }
 
@@ -612,11 +625,11 @@ public class AuthServiceImpl implements AuthService {
                     log.info("Published UserEvent for password change: {}", user.getId());
                 }
             } catch (Exception ex) {
-                log.error("Failed to send password change notification: {}", ex.getMessage());
+                log.error("Failed to send password change notification", ex);
             }
 
         } catch (Exception e) {
-            log.error("Password change failed for user ID: {} - {}", userId, e.getMessage());
+            log.error("Password change failed for user ID: {}", userId, e);
             throw new AuthException("Password change failed: " + e.getMessage());
         }
     }
@@ -630,7 +643,7 @@ public class AuthServiceImpl implements AuthService {
             log.info("Email verification successful for user ID: {}", userId);
 
         } catch (Exception e) {
-            log.error("Email verification failed for user ID: {} - {}", userId, e.getMessage());
+            log.error("Email verification failed for user ID: {}", userId, e);
             throw new AuthException("Email verification failed");
         }
     }
@@ -659,7 +672,7 @@ public class AuthServiceImpl implements AuthService {
             kafkaTemplate.send(KafkaTopics.USER_TOPIC, key, event);
             log.info("Published UserEvent for OTP request to email: {}", email);
         } catch (Exception ex) {
-            log.error("Failed to publish OTP event: {}", ex.getMessage());
+            log.error("Failed to publish OTP event", ex);
         }
     }
 }

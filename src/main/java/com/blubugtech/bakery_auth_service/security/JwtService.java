@@ -116,19 +116,19 @@ public class JwtService {
                     .parseSignedClaims(token)           // ✅ NEW: replaces parseClaimsJws()
                     .getPayload();                      // ✅ NEW: replaces getBody()
         } catch (ExpiredJwtException e) {
-            log.warn("JWT token is expired: {}", e.getMessage());
+            log.error("JWT token is expired", e);
             throw e;
         } catch (UnsupportedJwtException e) {
-            log.error("JWT token is unsupported: {}", e.getMessage());
+            log.error("JWT token is unsupported", e);
             throw e;
         } catch (MalformedJwtException e) {
-            log.error("Invalid JWT token: {}", e.getMessage());
+            log.error("Invalid JWT token", e);
             throw e;
         } catch (SecurityException e) {
-            log.error("Invalid JWT signature: {}", e.getMessage());
+            log.error("Invalid JWT signature", e);
             throw e;
         } catch (IllegalArgumentException e) {
-            log.error("JWT token compact of handler are invalid: {}", e.getMessage());
+            log.error("JWT token compact of handler are invalid", e);
             throw e;
         }
     }
@@ -138,6 +138,7 @@ public class JwtService {
         try {
             return extractExpiration(token).before(new Date());
         } catch (ExpiredJwtException e) {
+            log.error("Token is expired", e);
             return true;
         }
     }
@@ -148,7 +149,7 @@ public class JwtService {
             final String username = extractUsername(token);
             return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
         } catch (Exception e) {
-            log.error("Token validation failed: {}", e.getMessage());
+            log.error("Token validation failed", e);
             return false;
         }
     }
@@ -162,7 +163,7 @@ public class JwtService {
                     .parseSignedClaims(token);          // ✅ NEW: replaces parseClaimsJws()
             return true;
         } catch (Exception e) {
-            log.error("Token validation failed: {}", e.getMessage());
+            log.error("Token validation failed", e);
             return false;
         }
     }
@@ -173,6 +174,7 @@ public class JwtService {
             String tokenType = extractTokenType(token);
             return "ACCESS".equals(tokenType);
         } catch (Exception e) {
+            log.error("Error checking if token is access token", e);
             return false;
         }
     }
@@ -183,6 +185,7 @@ public class JwtService {
             String tokenType = extractTokenType(token);
             return "REFRESH".equals(tokenType);
         } catch (Exception e) {
+            log.error("Error checking if token is refresh token", e);
             return false;
         }
     }
@@ -212,6 +215,7 @@ public class JwtService {
             long remainingTime = expiration.getTime() - System.currentTimeMillis();
             return Math.max(0, remainingTime / 1000); // Convert to seconds
         } catch (Exception e) {
+            log.error("Error getting remaining expiration time", e);
             return 0L;
         }
     }
