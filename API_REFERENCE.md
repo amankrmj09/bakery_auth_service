@@ -28,165 +28,119 @@ Standard Spring Boot Actuator endpoints are used for monitoring and metrics.
 - **Response Body:** `200 OK` (Prometheus Text Format)
 
 ## Auth Controller
-**Base Path:** `/api/auth`
+**Base Path:** /api/auth
 
-### 1. User Registration
-- **Method:** `POST`
-- **Path:** `/api/auth/register`
-- **Type of API:** `Public`
-- **Request Body:**
-  ```json
-  {
-    "username": "string",      // Required (3-50 chars)
-    "email": "string",         // Required (Valid email)
-    "password": "string",      // Required (Min 6 chars)
-    "firstName": "string",     // Optional (Max 50 chars)
-    "lastName": "string",      // Optional (Max 50 chars)
-    "phone": "string",         // Optional (Max 15 chars)
-    "address": "string"        // Optional
-  }
-  ```
-- **Response Body:** `201 Created`
-  ```json
-  {
-    "access_token": "string",
-    "refresh_token": "string",
-    "token_type": "Bearer",
-    "expires_in": 3600,
-    "user": {
-      "id": "UUID",
-      "username": "string",
-      "email": "string",
-      "firstName": "string",
-      "lastName": "string",
-      "phone": "string",
-      "role": "string",
-      "createdAt": "2023-01-01T00:00:00"
-    }
-  }
-  ```
+### 1. Initiate Registration
+- **Method:** POST
+- **Path:** /api/auth/register
+- **Type of API:** Public
+- **Request Body:** RegisterRequest (JSON)
+- **Response Body:** 200 OK (Message with mock OTP)
 
-### 2. User Login
-- **Method:** `POST`
-- **Path:** `/api/auth/login`
-- **Type of API:** `Public`
-- **Request Body:**
-  ```json
-  {
-    "usernameOrEmail": "string", // Required
-    "password": "string"         // Required
-  }
-  ```
-- **Response Body:** `200 OK`
-  *(Same as Registration Response)*
+### 2. Verify Registration OTP
+- **Method:** POST
+- **Path:** /api/auth/register/verify
+- **Type of API:** Public
+- **Request Body:** RegisterVerifyRequest (JSON)
+- **Response Body:** 201 Created
+  Returns AuthResponse with JWT token.
 
-### 3. Refresh Token (Header)
-- **Method:** `POST`
-- **Path:** `/api/auth/refresh`
-- **Type of API:** `User`
+### 3. Resend Registration OTP
+- **Method:** POST
+- **Path:** /api/auth/register/resend
+- **Type of API:** Public
+- **Request Body:** ResendOtpRequest (JSON)
+- **Response Body:** 200 OK (Message with mock OTP)
+
+### 4. Initiate Login
+- **Method:** POST
+- **Path:** /api/auth/login
+- **Type of API:** Public
+- **Request Body:** LoginRequest (JSON)
+- **Response Body:** 200 OK
+  Returns LoginInitResponse with token and status.
+
+### 5. Verify Login OTP
+- **Method:** POST
+- **Path:** /api/auth/login/verify
+- **Type of API:** Public
+- **Request Body:** LoginVerifyRequest (JSON)
+- **Response Body:** 200 OK
+  Returns AuthResponse with JWT token.
+
+### 6. Resend Login OTP
+- **Method:** POST
+- **Path:** /api/auth/login/resend
+- **Type of API:** Public
+- **Request Body:** ResendOtpRequest (JSON)
+- **Response Body:** 200 OK (Message with mock OTP)
+
+### 7. Admin Direct Login
+- **Method:** POST
+- **Path:** /api/auth/admin/login
+- **Type of API:** Public
+- **Request Body:** LoginRequest (JSON)
+- **Response Body:** 200 OK
+  Returns AuthResponse with JWT token.
+
+### 8. Initiate Forgot Password
+- **Method:** POST
+- **Path:** /api/auth/forgot-password
+- **Type of API:** Public
+- **Request Body:** ForgotPasswordRequest (JSON)
+- **Response Body:** 200 OK (Message with mock OTP)
+
+### 9. Reset Password using OTP
+- **Method:** POST
+- **Path:** /api/auth/forgot-password/reset
+- **Type of API:** Public
+- **Request Body:** ResetPasswordRequest (JSON)
+- **Response Body:** 200 OK (Success message)
+
+### 10. Refresh Token
+- **Method:** POST
+- **Path:** /api/auth/refresh
+- **Type of API:** User
+- **Request Header:** Authorization: Bearer <refresh_token>
+- **Response Body:** 200 OK
+  Returns AuthResponse with JWT token.
+
+### 11. Validate Token
+- **Method:** POST
+- **Path:** /api/auth/validate
+- **Type of API:** Internal
+- **Request Header:** Authorization: Bearer <token>
+- **Response Body:** 200 OK
+  Returns TokenValidationResponse.
+
+### 12. Logout
+- **Method:** POST
+- **Path:** /api/auth/logout
+- **Type of API:** User
+- **Request Header:** Authorization: Bearer <token>
+- **Response Body:** 200 OK (Success message)
+
+### 13. Change Password
+- **Method:** POST
+- **Path:** /api/auth/change-password
+- **Type of API:** User
+- **Request Body:** ChangePasswordRequest (JSON)
+- **Response Body:** 200 OK (Success message)
+
+### 14. Verify Email
+- **Method:** POST
+- **Path:** /api/auth/verify-email/{userId}
+- **Type of API:** User
 - **Request Body:** None
-- **Response Body:** `200 OK`
-  *(Same as Registration Response)*
+- **Response Body:** 200 OK (Success message)
 
-### 4. Refresh Token (Body)
-- **Method:** `POST`
-- **Path:** `/api/auth/refresh-token`
-- **Type of API:** `Public`
-- **Request Body:**
-  ```json
-  {
-    "refreshToken": "string"
-  }
-  ```
-- **Response Body:** `200 OK`
-  *(Same as Registration Response)*
-
-### 5. Validate Token (Header)
-- **Method:** `POST`
-- **Path:** `/api/auth/validate`
-- **Type of API:** `User`
-- **Request Body:** None
-- **Response Body:** `200 OK`
-  ```json
-  {
-    "valid": true,
-    "message": "string",
-    "userId": "UUID",       // If valid
-    "username": "string",   // If valid
-    "email": "string",      // If valid
-    "role": "string"        // If valid
-  }
-  ```
-
-### 6. Validate Token (Body)
-- **Method:** `POST`
-- **Path:** `/api/auth/validate-token`
-- **Type of API:** `Public`
-- **Request Body:**
-  ```json
-  {
-    "token": "string"
-  }
-  ```
-- **Response Body:** `200 OK`
-  *(Same as Validate Token Header Response)*
-
-### 7. Logout
-- **Method:** `POST`
-- **Path:** `/api/auth/logout`
-- **Type of API:** `User`
-- **Request Body:** None
-- **Response Body:** `200 OK`
-  ```json
-  {
-    "message": "Logout successful"
-  }
-  ```
-
-### 8. Change Password
-- **Method:** `POST`
-- **Path:** `/api/auth/change-password`
-- **Type of API:** `User`
-- **Request Body:**
-  ```json
-  {
-    "currentPassword": "string",
-    "newPassword": "string"
-  }
-  ```
-- **Response Body:** `200 OK`
-  ```json
-  {
-    "message": "Password changed successfully"
-  }
-  ```
-
-### 9. Verify Email
-- **Method:** `POST`
-- **Path:** `/api/auth/verify-email/{userId}`
-- **Type of API:** `User`
-- **Request Body:** None
-- **Response Body:** `200 OK`
-  ```json
-  {
-    "message": "Email verified successfully"
-  }
-  ```
-
-### 10. Get Current User Info
-- **Method:** `GET`
-- **Path:** `/api/auth/me`
-- **Type of API:** `User`
-- **Request Body:** None
-- **Response Body:** `200 OK`
-  ```json
-  {
-    "userId": "UUID",
-    "username": "string",
-    "email": "string",
-    "role": "string"
-  }
-  ```
+### 15. Get Current User Info
+- **Method:** GET
+- **Path:** /api/auth/me
+- **Type of API:** User
+- **Request Header:** Authorization: Bearer <token>
+- **Response Body:** 200 OK
+  Returns TokenValidationResponse with user info.
 
 ---
 

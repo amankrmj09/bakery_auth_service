@@ -71,16 +71,21 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    // Admin Login (1-step, no OTP for now)
+    // Admin Login (Step 1: Initiate)
     @PostMapping("/admin/login")
-    @Operation(summary = "Direct login for admin without OTP")
-    public ResponseEntity<AuthResponse> adminLogin(@Valid @RequestBody LoginRequest request) throws AuthException {
+    @Operation(summary = "Initiate login for admin and send OTP")
+    public ResponseEntity<com.blubugtech.bakery_auth_service.dto.auth.LoginInitResponse> adminLogin(@Valid @RequestBody LoginRequest request) throws AuthException {
         log.info("Admin login request received for user: {}", request.getUsernameOrEmail());
-        AuthResponse response = authService.login(request);
-        
-        if (response.getUser().getRole() != com.blubugtech.bakery_auth_service.entity.User.Role.ADMIN) {
-            throw new org.blubakery.common.security.exception.security.UnauthorizedAccessException("Access denied. Admin role required.");
-        }
+        com.blubugtech.bakery_auth_service.dto.auth.LoginInitResponse response = authService.initiateAdminLogin(request);
+        return ResponseEntity.ok(response);
+    }
+
+    // Admin Login (Step 2: Verify)
+    @PostMapping("/admin/login/verify")
+    @Operation(summary = "Verify OTP to complete admin login")
+    public ResponseEntity<AuthResponse> verifyAdminLogin(@Valid @RequestBody LoginVerifyRequest request) throws AuthException {
+        log.info("Admin login verification request received for: {}", request.getUsernameOrEmail());
+        AuthResponse response = authService.verifyAdminLogin(request);
         return ResponseEntity.ok(response);
     }
 

@@ -347,6 +347,102 @@ public class AuthServiceImpl implements AuthService {
             throw new AuthException("Failed to resend login OTP");
         }
     }
+    public LoginInitResponse initiateAdminLogin(LoginRequest request) throws AuthException {
+        log.info("Processing admin login for user: {}", request.getUsernameOrEmail());
+        try {
+            if (userService.isAccountLocked(request.getUsernameOrEmail())) {
+                throw new AccountLockedException("Account locked");
+            }
+            
+            Authentication authentication;
+            try {
+                authentication = authenticationManager.authenticate(
+                        new UsernamePasswordAuthenticationToken(
+                                request.getUsernameOrEmail(), request.getPassword()
+                        )
+                    );
+            } catch (AuthenticationException e) {
+                userService.recordFailedLogin(request.getUsernameOrEmail());
+                throw new InvalidCredentialsException("Invalid credentials");
+            }
+            
+            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+            User user = userDetails.getUser();
+            
+            if (user.getRole() != User.Role.ADMIN) {
+                throw new org.blubakery.common.security.exception.security.UnauthorizedAccessException("Access denied. Admin role required.");
+            }
+            
+            String otp = authOtpService.generateAndSaveLoginOtp(user.getEmail());
+            sendOtpEvent(user.getId(), user.getEmail(), user.getFirstName(), user.getLastName(), user.getPhone(), otp);
+            
+            return LoginInitResponse.builder()
+                    .requiresOtp(true)
+                    .message(otp)
+                    .build();
+        } catch (AuthException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AuthException("Failed to initiate admin login");
+        }
+    }
+
+    public AuthResponse verifyAdminLogin(LoginVerifyRequest request) throws AuthException {
+        Optional<User> userOptional = userService.findByUsername(request.getUsernameOrEmail());
+        if (userOptional.isEmpty()) {
+            userOptional = userService.findByEmail(request.getUsernameOrEmail());
+        }
+        if (userOptional.isEmpty()) throw new UserNotFoundException("User not found");
+        User user = userOptional.get();
+        
+        if (user.getRole() != User.Role.ADMIN) {
+            throw new org.blubakery.common.security.exception.security.UnauthorizedAccessException("Access denied. Admin role required.");
+        }
+
+        if (!authOtpService.verifyLoginOtp(user.getEmail(), request.getOtp())) {
+            throw new InvalidTokenException("Invalid or expired OTP");
+        }
+
+        userService.recordSuccessfulLogin(user.getId());
+
+        if (user.getLoginNotificationsEnabled() != null && user.getLoginNotificationsEnabled()) {
+            try {
+                String ipAddress = "Unknown IP";
+                RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
+                if (requestAttributes instanceof ServletRequestAttributes) {
+                    HttpServletRequest httpRequest = ((ServletRequestAttributes) requestAttributes).getRequest();
+                    ipAddress = httpRequest.getHeader("X-Forwarded-For");
+                    if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
+                        ipAddress = httpRequest.getRemoteAddr();
+                    }
+                }
+
+                UserPayload payload = UserPayload.builder()
+                        .userId(user.getId())
+                        .email(user.getEmail())
+                        .firstName(user.getFirstName())
+                        .lastName(user.getLastName())
+                        .action("NEW_SIGN_IN")
+                        .ipAddress(ipAddress)
+                        .location("Unknown Location")
+                        .timestamp(java.time.LocalDateTime.now())
+                        .build();
+                UserEvent event = new UserEvent();
+                event.setEventId(UUID.randomUUID().toString());
+                event.setEventType("NEW_SIGN_IN");
+                event.setTimestamp(Instant.now());
+                event.setPayload(payload);
+                kafkaTemplate.send(KafkaTopics.USER_TOPIC, user.getId().toString(), event);
+                log.info("Published NEW_SIGN_IN event for admin user: {}", user.getUsername());
+            } catch (Exception ex) {
+                log.error("Failed to publish NEW_SIGN_IN event for admin user: {}", user.getUsername(), ex);
+            }
+        }
+
+        String accessToken = jwtService.generateAccessToken(user);
+        String refreshToken = jwtService.generateRefreshToken(user);
+        return AuthResponse.of(accessToken, refreshToken, jwtService.getExpirationTime(), user);
+    }
 
     public String initiateForgotPassword(ForgotPasswordRequest request) throws AuthException {
         Optional<User> userOpt = userService.findByEmail(request.getEmail());
