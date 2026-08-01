@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import com.blubugtech.bakery_auth_service.service.dashboard.strategy.TimeframeStrategy;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,18 +39,9 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     public Map<String, Object> getStatisticsWithGrowth(String timeframe) {
         DashboardStatistics currentStats = getStatistics();
         LocalDate today = LocalDate.now();
-        LocalDate pastDate;
-        LocalDate previousPeriodDate;
-        if ("1d".equalsIgnoreCase(timeframe)) {
-            pastDate = today.minusDays(1);
-            previousPeriodDate = today.minusDays(2);
-        } else if ("7d".equalsIgnoreCase(timeframe)) {
-            pastDate = today.minusDays(7);
-            previousPeriodDate = today.minusDays(14);
-        } else {
-            pastDate = today.minusMonths(1);
-            previousPeriodDate = today.minusMonths(2);
-        }
+        TimeframeStrategy strategy = TimeframeStrategy.fromString(timeframe);
+        LocalDate pastDate = strategy.getPastDate(today);
+        LocalDate previousPeriodDate = strategy.getPreviousPeriodDate(today);
 
         Optional<DashboardStatisticsSnapshot> pastSnapshotOpt = snapshotRepository.findFirstBySnapshotDateLessThanEqualOrderBySnapshotDateDesc(pastDate);
         Optional<DashboardStatisticsSnapshot> previousSnapshotOpt = snapshotRepository.findFirstBySnapshotDateLessThanEqualOrderBySnapshotDateDesc(previousPeriodDate);
