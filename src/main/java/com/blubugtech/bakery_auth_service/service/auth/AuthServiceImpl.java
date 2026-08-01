@@ -5,7 +5,8 @@ import com.blubugtech.bakery_auth_service.entity.User;
 import com.blubugtech.bakery_auth_service.exception.*;
 import com.blubugtech.bakery_auth_service.security.CustomUserDetails;
 import com.blubugtech.bakery_auth_service.security.JwtService;
-import com.blubugtech.bakery_auth_service.service.user.UserService;
+import com.blubugtech.bakery_auth_service.service.user.UserProfileService;
+import com.blubugtech.bakery_auth_service.service.user.UserAccountSecurityService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -29,13 +30,19 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.blubugtech.bakery_auth_service.service.auth.UserRegistrationService;
+import com.blubugtech.bakery_auth_service.service.auth.UserAuthenticationService;
+import com.blubugtech.bakery_auth_service.service.auth.PasswordManagementService;
+import com.blubugtech.bakery_auth_service.service.auth.TokenValidationService;
+
 @Service
 @Transactional
 @Slf4j
 @RequiredArgsConstructor
-public class AuthServiceImpl implements AuthService {
+public class AuthServiceImpl implements UserRegistrationService, UserAuthenticationService, PasswordManagementService, TokenValidationService {
 
-    final private UserService userService;
+    final private UserProfileService userProfileService;
+    final private UserAccountSecurityService userAccountSecurityService;
 
     final private JwtService jwtService;
 
@@ -53,7 +60,7 @@ public class AuthServiceImpl implements AuthService {
 
         try {
             // Create user through UserService
-            User user = userService.createUser(request);
+            User user = userAccountSecurityService.createUser(request);
 
             // Generate tokens
             String accessToken = jwtService.generateAccessToken(user);
@@ -98,7 +105,7 @@ public class AuthServiceImpl implements AuthService {
 
         try {
             // Check if account is locked
-            if (userService.isAccountLocked(request.getUsernameOrEmail())) {
+            if (userAccountSecurityService.isAccountLocked(request.getUsernameOrEmail())) {
                 throw new AccountLockedException("Account is locked due to too many failed login attempts. Please try again later.");
             }
 
@@ -114,7 +121,7 @@ public class AuthServiceImpl implements AuthService {
             } catch (AuthenticationException e) {
                 log.error("Authentication failed for user: {}", request.getUsernameOrEmail(), e);
                 // Record failed login attempt
-                userService.recordFailedLogin(request.getUsernameOrEmail());
+                userAccountSecurityService.recordFailedLogin(request.getUsernameOrEmail());
                 throw new InvalidCredentialsException("Invalid credentials");
             }
 
@@ -124,7 +131,7 @@ public class AuthServiceImpl implements AuthService {
             User user = userDetails.getUser();
 
             // Record successful login
-            userService.recordSuccessfulLogin(user.getId());
+            userAccountSecurityService.recordSuccessfulLogin(user.getId());
 
             // Generate tokens
             String accessToken = jwtService.generateAccessToken(user);
@@ -147,7 +154,7 @@ public class AuthServiceImpl implements AuthService {
     public String initiateRegister(RegisterRequest request) throws AuthException {
         log.info("Initiating OTP registration for: {}", request.getEmail());
         try {
-            if (userService.findByUsername(request.getUsername()).isPresent() || userService.findByEmail(request.getEmail()).isPresent()) {
+            if (userProfileService.findByUsername(request.getUsername()).isPresent() || userProfileService.findByEmail(request.getEmail()).isPresent()) {
                 throw new AuthException("User already exists");
             }
             String requestJson = objectMapper.writeValueAsString(request);
@@ -194,7 +201,7 @@ public class AuthServiceImpl implements AuthService {
 
     public LoginInitResponse initiateLogin(LoginRequest request) throws AuthException {
         try {
-            if (userService.isAccountLocked(request.getUsernameOrEmail())) {
+            if (userAccountSecurityService.isAccountLocked(request.getUsernameOrEmail())) {
                 throw new AccountLockedException("Account locked");
             }
             // Verify password for 2FA
@@ -207,7 +214,7 @@ public class AuthServiceImpl implements AuthService {
                 );
             } catch (AuthenticationException e) {
                 log.error("Authentication failed", e);
-                userService.recordFailedLogin(request.getUsernameOrEmail());
+                userAccountSecurityService.recordFailedLogin(request.getUsernameOrEmail());
                 throw new InvalidCredentialsException("Invalid credentials");
             }
             CustomUserDetails userDetails =
@@ -216,7 +223,7 @@ public class AuthServiceImpl implements AuthService {
 
             if (user.getTwoFactorEnabled() != null && !user.getTwoFactorEnabled()) {
                 // Bypass 2FA
-                userService.recordSuccessfulLogin(user.getId());
+                userAccountSecurityService.recordSuccessfulLogin(user.getId());
 
                 if (user.getLoginNotificationsEnabled() != null && user.getLoginNotificationsEnabled()) {
                     try {
@@ -280,9 +287,9 @@ public class AuthServiceImpl implements AuthService {
     }
 
     public AuthResponse verifyLogin(LoginVerifyRequest request) throws AuthException {
-        Optional<User> userOptional = userService.findByUsername(request.getUsernameOrEmail());
+        Optional<User> userOptional = userProfileService.findByUsername(request.getUsernameOrEmail());
         if (userOptional.isEmpty()) {
-            userOptional = userService.findByEmail(request.getUsernameOrEmail());
+            userOptional = userProfileService.findByEmail(request.getUsernameOrEmail());
         }
         if (userOptional.isEmpty()) throw new UserNotFoundException("User not found");
         User user = userOptional.get();
@@ -291,7 +298,7 @@ public class AuthServiceImpl implements AuthService {
             throw new InvalidTokenException("Invalid or expired OTP");
         }
 
-        userService.recordSuccessfulLogin(user.getId());
+        userAccountSecurityService.recordSuccessfulLogin(user.getId());
 
         if (user.getLoginNotificationsEnabled() != null && user.getLoginNotificationsEnabled()) {
             try {
@@ -335,9 +342,9 @@ public class AuthServiceImpl implements AuthService {
     public String resendLoginOtp(String usernameOrEmail) throws AuthException {
         log.info("Resending login OTP for: {}", usernameOrEmail);
         try {
-            Optional<User> userOptional = userService.findByUsername(usernameOrEmail);
+            Optional<User> userOptional = userProfileService.findByUsername(usernameOrEmail);
             if (userOptional.isEmpty()) {
-                userOptional = userService.findByEmail(usernameOrEmail);
+                userOptional = userProfileService.findByEmail(usernameOrEmail);
             }
             if (userOptional.isEmpty()) {
                 throw new UserNotFoundException("User not found");
@@ -360,7 +367,7 @@ public class AuthServiceImpl implements AuthService {
     public LoginInitResponse initiateAdminLogin(LoginRequest request) throws AuthException {
         log.info("Processing admin login for user: {}", request.getUsernameOrEmail());
         try {
-            if (userService.isAccountLocked(request.getUsernameOrEmail())) {
+            if (userAccountSecurityService.isAccountLocked(request.getUsernameOrEmail())) {
                 throw new AccountLockedException("Account locked");
             }
             
@@ -373,7 +380,7 @@ public class AuthServiceImpl implements AuthService {
                     );
             } catch (AuthenticationException e) {
                 log.error("Authentication failed", e);
-                userService.recordFailedLogin(request.getUsernameOrEmail());
+                userAccountSecurityService.recordFailedLogin(request.getUsernameOrEmail());
                 throw new InvalidCredentialsException("Invalid credentials");
             }
             
@@ -401,9 +408,9 @@ public class AuthServiceImpl implements AuthService {
     }
 
     public AuthResponse verifyAdminLogin(LoginVerifyRequest request) throws AuthException {
-        Optional<User> userOptional = userService.findByUsername(request.getUsernameOrEmail());
+        Optional<User> userOptional = userProfileService.findByUsername(request.getUsernameOrEmail());
         if (userOptional.isEmpty()) {
-            userOptional = userService.findByEmail(request.getUsernameOrEmail());
+            userOptional = userProfileService.findByEmail(request.getUsernameOrEmail());
         }
         if (userOptional.isEmpty()) throw new UserNotFoundException("User not found");
         User user = userOptional.get();
@@ -416,7 +423,7 @@ public class AuthServiceImpl implements AuthService {
             throw new InvalidTokenException("Invalid or expired OTP");
         }
 
-        userService.recordSuccessfulLogin(user.getId());
+        userAccountSecurityService.recordSuccessfulLogin(user.getId());
 
         if (user.getLoginNotificationsEnabled() != null && user.getLoginNotificationsEnabled()) {
             try {
@@ -458,7 +465,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     public String initiateForgotPassword(ForgotPasswordRequest request) throws AuthException {
-        Optional<User> userOpt = userService.findByEmail(request.getEmail());
+        Optional<User> userOpt = userProfileService.findByEmail(request.getEmail());
         if (userOpt.isEmpty()) throw new UserNotFoundException("User not found");
         User user = userOpt.get();
         String otp = authOtpService.generateAndSaveResetOtp(request.getEmail());
@@ -470,13 +477,13 @@ public class AuthServiceImpl implements AuthService {
         if (!authOtpService.verifyResetOtp(request.getEmail(), request.getOtp())) {
             throw new InvalidTokenException("Invalid or expired OTP");
         }
-        Optional<User> userOpt = userService.findByEmail(request.getEmail());
+        Optional<User> userOpt = userProfileService.findByEmail(request.getEmail());
         if (userOpt.isEmpty()) throw new UserNotFoundException("User not found");
         // TODO: For reset, we update without requiring current password. We need a method in userService for direct password update or use existing if it doesn't strictly check old password.
         // We will call the repo directly or add a direct update method to userService.
         User user = userOpt.get();
-        // Since we are inside auth service, we can use userService.resetPassword (assuming we create it) or just update it via another means.
-        userService.resetPassword(user.getId(), request.getNewPassword());
+        // Since we are inside auth service, we can use userAccountSecurityService.resetPassword (assuming we create it) or just update it via another means.
+        userAccountSecurityService.resetPassword(user.getId(), request.getNewPassword());
     }
 
     // Refresh token
@@ -503,7 +510,7 @@ public class AuthServiceImpl implements AuthService {
             String username = jwtService.extractUsername(refreshToken);
 
             // Find user
-            Optional<User> userOptional = userService.findByUsername(username);
+            Optional<User> userOptional = userProfileService.findByUsername(username);
             if (userOptional.isEmpty()) {
                 throw new UserNotFoundException("User not found");
             }
@@ -555,7 +562,7 @@ public class AuthServiceImpl implements AuthService {
             String email = jwtService.extractEmail(token);
 
             // Verify user still exists and is active
-            Optional<User> userOptional = userService.findById(userId);
+            Optional<User> userOptional = userProfileService.findById(userId);
             if (userOptional.isEmpty()) {
                 return TokenValidationResponse.invalid("User not found");
             }
@@ -596,12 +603,12 @@ public class AuthServiceImpl implements AuthService {
         log.info("Processing password change for user ID: {}", userId);
 
         try {
-            userService.updatePassword(userId, currentPassword, newPassword);
+            userAccountSecurityService.updatePassword(userId, currentPassword, newPassword);
             log.info("Password change successful for user ID: {}", userId);
 
             // Send password change notification
             try {
-                Optional<User> userOpt = userService.findById(userId);
+                Optional<User> userOpt = userProfileService.findById(userId);
                 if (userOpt.isPresent()) {
                     User user = userOpt.get();
                     Map<String, Object> notificationReq = new HashMap<>();
@@ -639,7 +646,7 @@ public class AuthServiceImpl implements AuthService {
         log.info("Processing email verification for user ID: {}", userId);
 
         try {
-            userService.verifyEmail(userId);
+            userAccountSecurityService.verifyEmail(userId);
             log.info("Email verification successful for user ID: {}", userId);
 
         } catch (Exception e) {

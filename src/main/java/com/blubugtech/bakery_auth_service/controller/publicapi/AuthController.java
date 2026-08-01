@@ -21,17 +21,32 @@ import java.util.Map;
 import java.util.UUID;
 import org.springframework.security.core.Authentication;
 
+import com.blubugtech.bakery_auth_service.service.auth.UserRegistrationService;
+import com.blubugtech.bakery_auth_service.service.auth.UserAuthenticationService;
+import com.blubugtech.bakery_auth_service.service.auth.PasswordManagementService;
+import com.blubugtech.bakery_auth_service.service.auth.TokenValidationService;
+
 @RestController
 @RequestMapping("/api/auth")
 @Tag(name = "Authentication", description = "Endpoints for user authentication and authorization")
 @Slf4j
 public class AuthController {
 
-    private final AuthService authService;
+    private final UserRegistrationService userRegistrationService;
+    private final UserAuthenticationService userAuthenticationService;
+    private final PasswordManagementService passwordManagementService;
+    private final TokenValidationService tokenValidationService;
     private final JwtService jwtService;
 
-    public AuthController(AuthService authService, JwtService jwtService) {
-        this.authService = authService;
+    public AuthController(UserRegistrationService userRegistrationService,
+                          UserAuthenticationService userAuthenticationService,
+                          PasswordManagementService passwordManagementService,
+                          TokenValidationService tokenValidationService,
+                          JwtService jwtService) {
+        this.userRegistrationService = userRegistrationService;
+        this.userAuthenticationService = userAuthenticationService;
+        this.passwordManagementService = passwordManagementService;
+        this.tokenValidationService = tokenValidationService;
         this.jwtService = jwtService;
     }
 
@@ -40,7 +55,7 @@ public class AuthController {
     @Operation(summary = "Initiate registration for a new user")
     public ResponseEntity<MessageResponse> initiateRegister(@Valid @RequestBody RegisterRequest request) throws AuthException {
         log.info("Registration initiation request received for username: {}", request.getUsername());
-        String otp = authService.initiateRegister(request);
+        String otp = userRegistrationService.initiateRegister(request);
         // Only return OTP in dev environments for learning purposes
         return ResponseEntity.ok(new MessageResponse("OTP Sent. Mock OTP: " + otp));
     }
@@ -50,7 +65,7 @@ public class AuthController {
     @Operation(summary = "Verify OTP to complete registration")
     public ResponseEntity<AuthResponse> verifyRegister(@Valid @RequestBody RegisterVerifyRequest request) throws AuthException {
         log.info("Registration verification request received for email: {}", request.getEmail());
-        AuthResponse response = authService.verifyRegister(request);
+        AuthResponse response = userRegistrationService.verifyRegister(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -59,7 +74,7 @@ public class AuthController {
     @Operation(summary = "Resend OTP for registration")
     public ResponseEntity<MessageResponse> resendRegisterOtp(@Valid @RequestBody ResendOtpRequest request) throws AuthException {
         log.info("Resend registration OTP request received for email: {}", request.getEmail());
-        String otp = authService.resendRegisterOtp(request.getEmail());
+        String otp = userRegistrationService.resendRegisterOtp(request.getEmail());
         return ResponseEntity.ok(new MessageResponse("OTP Sent. Mock OTP: " + otp));
     }
 
@@ -67,7 +82,7 @@ public class AuthController {
     @Operation(summary = "Login and initiate 2FA")
     public ResponseEntity<com.blubugtech.bakery_auth_service.dto.auth.LoginInitResponse> login(@Valid @RequestBody LoginRequest request) throws AuthException {
         log.info("Login request received for user: {}", request.getUsernameOrEmail());
-        com.blubugtech.bakery_auth_service.dto.auth.LoginInitResponse response = authService.initiateLogin(request);
+        com.blubugtech.bakery_auth_service.dto.auth.LoginInitResponse response = userAuthenticationService.initiateLogin(request);
         return ResponseEntity.ok(response);
     }
 
@@ -76,7 +91,7 @@ public class AuthController {
     @Operation(summary = "Initiate login for admin and send OTP")
     public ResponseEntity<com.blubugtech.bakery_auth_service.dto.auth.LoginInitResponse> adminLogin(@Valid @RequestBody LoginRequest request) throws AuthException {
         log.info("Admin login request received for user: {}", request.getUsernameOrEmail());
-        com.blubugtech.bakery_auth_service.dto.auth.LoginInitResponse response = authService.initiateAdminLogin(request);
+        com.blubugtech.bakery_auth_service.dto.auth.LoginInitResponse response = userAuthenticationService.initiateAdminLogin(request);
         return ResponseEntity.ok(response);
     }
 
@@ -85,7 +100,7 @@ public class AuthController {
     @Operation(summary = "Verify OTP to complete admin login")
     public ResponseEntity<AuthResponse> verifyAdminLogin(@Valid @RequestBody LoginVerifyRequest request) throws AuthException {
         log.info("Admin login verification request received for: {}", request.getUsernameOrEmail());
-        AuthResponse response = authService.verifyAdminLogin(request);
+        AuthResponse response = userAuthenticationService.verifyAdminLogin(request);
         return ResponseEntity.ok(response);
     }
 
@@ -94,7 +109,7 @@ public class AuthController {
     @Operation(summary = "Verify OTP to complete login")
     public ResponseEntity<AuthResponse> verifyLogin(@Valid @RequestBody LoginVerifyRequest request) throws AuthException {
         log.info("Login verification request received for: {}", request.getUsernameOrEmail());
-        AuthResponse response = authService.verifyLogin(request);
+        AuthResponse response = userAuthenticationService.verifyLogin(request);
         return ResponseEntity.ok(response);
     }
 
@@ -103,7 +118,7 @@ public class AuthController {
     @Operation(summary = "Resend OTP for login")
     public ResponseEntity<MessageResponse> resendLoginOtp(@Valid @RequestBody ResendOtpRequest request) throws AuthException {
         log.info("Resend login OTP request received for: {}", request.getEmail());
-        String otp = authService.resendLoginOtp(request.getEmail());
+        String otp = userAuthenticationService.resendLoginOtp(request.getEmail());
         return ResponseEntity.ok(new MessageResponse("OTP Sent. Mock OTP: " + otp));
     }
 
@@ -112,7 +127,7 @@ public class AuthController {
     @Operation(summary = "Initiate password reset")
     public ResponseEntity<MessageResponse> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) throws AuthException {
         log.info("Forgot password request received for email: {}", request.getEmail());
-        String otp = authService.initiateForgotPassword(request);
+        String otp = passwordManagementService.initiateForgotPassword(request);
         return ResponseEntity.ok(new MessageResponse("OTP Sent. Mock OTP: " + otp));
     }
 
@@ -121,7 +136,7 @@ public class AuthController {
     @Operation(summary = "Reset password using OTP")
     public ResponseEntity<MessageResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) throws AuthException {
         log.info("Reset password request received for email: {}", request.getEmail());
-        authService.resetPassword(request);
+        passwordManagementService.resetPassword(request);
         return ResponseEntity.ok(new MessageResponse("Password reset successfully"));
     }
 
@@ -139,7 +154,7 @@ public class AuthController {
             return ResponseEntity.badRequest().build();
         }
 
-        AuthResponse response = authService.refreshToken(refreshToken);
+        AuthResponse response = tokenValidationService.refreshToken(refreshToken);
 
         log.info("Token refresh successful");
         return ResponseEntity.ok(response);
@@ -159,7 +174,7 @@ public class AuthController {
             throw new UnauthenticatedException("No token provided");
         }
 
-        TokenValidationResponse validation = authService.validateToken(token);
+        TokenValidationResponse validation = tokenValidationService.validateToken(token);
 
         TokenValidationResponse response = TokenValidationResponse.builder()
                 .valid(validation.isValid())
@@ -187,7 +202,7 @@ public class AuthController {
         String token = jwtService.extractTokenFromHeader(authHeader);
 
         if (token != null) {
-            authService.logout(token);
+            userAuthenticationService.logout(token);
         }
 
         log.info("Logout processed successfully");
@@ -208,7 +223,7 @@ public class AuthController {
         String currentPassword = request.currentPassword();
         String newPassword = request.newPassword();
 
-        authService.changePassword(userId, currentPassword, newPassword);
+        passwordManagementService.changePassword(userId, currentPassword, newPassword);
 
         log.info("Password change successful for user ID: {}", userId);
         return ResponseEntity.ok(new MessageResponse("Password changed successfully"));
@@ -220,7 +235,7 @@ public class AuthController {
     @Operation(summary = "Verify user email")
     public ResponseEntity<MessageResponse> verifyEmail(@PathVariable UUID userId) throws AuthException {
         log.info("Email verification request received for user ID: {}", userId);
-        authService.verifyEmail(userId);
+        userRegistrationService.verifyEmail(userId);
         log.info("Email verification successful for user ID: {}", userId);
         return ResponseEntity.ok(new MessageResponse("Email verified successfully"));
     }
@@ -239,7 +254,7 @@ public class AuthController {
             throw new UnauthenticatedException("Authentication required");
         }
 
-        TokenValidationResponse validation = authService.validateToken(token);
+        TokenValidationResponse validation = tokenValidationService.validateToken(token);
 
         if (!validation.isValid()) {
             throw new InvalidTokenException("Invalid token");

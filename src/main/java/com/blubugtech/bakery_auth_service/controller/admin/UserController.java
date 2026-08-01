@@ -1,13 +1,14 @@
 package com.blubugtech.bakery_auth_service.controller.admin;
 
-import com.blubugtech.bakery_auth_service.dto.user.UserProfileUpdateRequest;
 import com.blubugtech.bakery_auth_service.dto.user.UserResponse;
 import com.blubugtech.bakery_auth_service.dto.user.UpdateRoleRequest;
 import com.blubugtech.bakery_auth_service.dto.user.UpdateStatusRequest;
 import com.blubugtech.bakery_auth_service.entity.User;
 import com.blubugtech.bakery_auth_service.exception.AuthException;
 import com.blubugtech.bakery_auth_service.service.dashboard.DashboardStatisticsService;
-import com.blubugtech.bakery_auth_service.service.user.UserService;
+import com.blubugtech.bakery_auth_service.service.user.AdminUserService;
+import com.blubugtech.bakery_auth_service.service.user.UserAccountSecurityService;
+import com.blubugtech.bakery_auth_service.service.user.UserProfileService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -21,7 +22,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PagedModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -34,42 +34,11 @@ import java.util.UUID;
 @Slf4j
 public class UserController {
 
-    private final UserService userService;
+    private final AdminUserService adminUserService;
+    private final UserProfileService userProfileService;
+    private final UserAccountSecurityService userAccountSecurityService;
 
     private final DashboardStatisticsService dashboardStatisticsService;
-
-    // Get user profile
-    @GetMapping("/profile")
-    @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Get current user profile")
-    public ResponseEntity<UserResponse> getUserProfile(Authentication authentication) throws AuthException {
-        log.info("Get user profile request received");
-
-        UUID userId = UUID.fromString(authentication.getName());
-
-        UserResponse userResponse = userService.getUserProfile(userId);
-
-        log.info("User profile retrieved for user ID: {}", userId);
-        return ResponseEntity.ok(userResponse);
-    }
-
-    // Update user profile
-    @PutMapping("/profile")
-    @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Update current user profile")
-    public ResponseEntity<UserResponse> updateUserProfile(
-            @Valid @RequestBody UserProfileUpdateRequest request,
-            Authentication authentication) throws AuthException {
-
-        log.info("Update user profile request received");
-
-        UUID userId = UUID.fromString(authentication.getName());
-
-        UserResponse userResponse = userService.updateUserProfile(userId, request);
-
-        log.info("User profile updated for user ID: {}", userId);
-        return ResponseEntity.ok(userResponse);
-    }
 
     // Get user by ID (Admin or self only)
     @GetMapping("/{userId}")
@@ -80,7 +49,7 @@ public class UserController {
 
         log.info("Get user by ID request received for user ID: {}", userId);
 
-        UserResponse userResponse = userService.getUserProfile(userId);
+        UserResponse userResponse = userProfileService.getUserProfile(userId);
 
         log.info("User retrieved for user ID: {}", userId);
         return ResponseEntity.ok(userResponse);
@@ -101,7 +70,7 @@ public class UserController {
         Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        Page<UserResponse> users = userService.getAllUsers(pageable);
+        Page<UserResponse> users = adminUserService.getAllUsers(pageable);
 
         log.info("All users retrieved, count: {}", users.getContent().size());
         return ResponseEntity.ok(new PagedModel<>(users));
@@ -123,7 +92,7 @@ public class UserController {
         Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        Page<UserResponse> users = userService.searchUsers(query, pageable);
+        Page<UserResponse> users = adminUserService.searchUsers(query, pageable);
 
         log.info("User search completed, results: {}", users.getContent().size());
         return ResponseEntity.ok(new PagedModel<>(users));
@@ -146,7 +115,7 @@ public class UserController {
         Pageable pageable = PageRequest.of(page, size, sort);
 
         User.Role userRole = User.Role.valueOf(role.toUpperCase());
-        Page<UserResponse> users = userService.getUsersByRole(userRole, pageable);
+        Page<UserResponse> users = adminUserService.getUsersByRole(userRole, pageable);
 
         log.info("Users by role retrieved, count: {}", users.getContent().size());
         return ResponseEntity.ok(new PagedModel<>(users));
@@ -162,7 +131,7 @@ public class UserController {
 
         log.info("Update user role request received (admin) for user ID: {}", userId);
 
-        userService.updateUserRole(userId, request.role());
+        adminUserService.updateUserRole(userId, request.role());
 
         log.info("User role updated to {} for user ID: {}", request.role(), userId);
         return ResponseEntity.ok(new MessageResponse("User role updated successfully"));
@@ -178,7 +147,7 @@ public class UserController {
 
         log.info("Update user status request received (admin) for user ID: {}", userId);
 
-        userService.updateUserStatus(userId, request.status());
+        adminUserService.updateUserStatus(userId, request.status());
 
         log.info("User status updated to {} for user ID: {}", request.status(), userId);
         return ResponseEntity.ok(new MessageResponse("User status updated successfully"));
@@ -191,7 +160,7 @@ public class UserController {
     public ResponseEntity<MessageResponse> unlockUserAccount(@PathVariable UUID userId) throws AuthException {
         log.info("Unlock user account request received (admin) for user ID: {}", userId);
 
-        userService.unlockAccount(userId);
+        userAccountSecurityService.unlockAccount(userId);
 
         log.info("User account unlocked for user ID: {}", userId);
         return ResponseEntity.ok(new MessageResponse("User account unlocked successfully"));
@@ -204,7 +173,7 @@ public class UserController {
     public ResponseEntity<MessageResponse> deleteUser(@PathVariable UUID userId) throws AuthException {
         log.info("Delete user request received (admin) for user ID: {}", userId);
 
-        userService.deleteUser(userId);
+        adminUserService.deleteUser(userId);
 
         log.info("User deleted for user ID: {}", userId);
         return ResponseEntity.ok(new MessageResponse("User deleted successfully"));
@@ -217,7 +186,7 @@ public class UserController {
     public ResponseEntity<Map<String, Long>> getUserStatistics() {
         log.info("Get user statistics request received (admin)");
 
-        Map<String, Long> statistics = userService.getUserStatistics();
+        Map<String, Long> statistics = adminUserService.getUserStatistics();
 
         log.info("User statistics retrieved");
         return ResponseEntity.ok(statistics);
