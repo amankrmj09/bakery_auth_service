@@ -23,11 +23,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.blubugtech.bakery_auth_service.service.user.UserProfileService;
+import com.blubugtech.bakery_auth_service.service.user.UserAccountSecurityService;
+import com.blubugtech.bakery_auth_service.service.user.AdminUserService;
+
 @Service
 @Transactional
 @Slf4j
 @RequiredArgsConstructor
-public class UserServiceImpl implements UserService {
+public class UserServiceImpl implements UserProfileService, UserAccountSecurityService, AdminUserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
