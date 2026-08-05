@@ -86,7 +86,7 @@ public class AuthServiceImpl implements UserRegistrationService, UserAuthenticat
                 log.error("Failed to publish UserEvent", ex);
             }
 
-            return AuthResponse.of(accessToken, refreshToken, expiresIn, user);
+            return buildAuthResponse(accessToken, refreshToken, expiresIn, user);
 
         } catch (Exception e) {
             log.error("Registration failed for username: {}", request.getUsername(), e);
@@ -135,7 +135,7 @@ public class AuthServiceImpl implements UserRegistrationService, UserAuthenticat
 
             log.info("Login successful for user: {}", user.getUsername());
 
-            return AuthResponse.of(accessToken, refreshToken, expiresIn, user);
+            return buildAuthResponse(accessToken, refreshToken, expiresIn, user);
 
         } catch (AuthException e) {
             log.error("Login failed for user: {}", request.getUsernameOrEmail(), e);
@@ -256,7 +256,7 @@ public class AuthServiceImpl implements UserRegistrationService, UserAuthenticat
 
                 String accessToken = jwtService.generateAccessToken(user);
                 String refreshToken = jwtService.generateRefreshToken(user);
-                AuthResponse authResponse = AuthResponse.of(accessToken, refreshToken, jwtService.getExpirationTime(), user);
+                AuthResponse authResponse = buildAuthResponse(accessToken, refreshToken, jwtService.getExpirationTime(), user);
 
                 return com.blubugtech.bakery_auth_service.dto.auth.LoginInitResponse.builder()
                         .requiresOtp(false)
@@ -331,7 +331,7 @@ public class AuthServiceImpl implements UserRegistrationService, UserAuthenticat
 
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
-        return AuthResponse.of(accessToken, refreshToken, jwtService.getExpirationTime(), user);
+        return buildAuthResponse(accessToken, refreshToken, jwtService.getExpirationTime(), user);
     }
 
     public String resendLoginOtp(String usernameOrEmail) throws AuthException {
@@ -457,7 +457,7 @@ public class AuthServiceImpl implements UserRegistrationService, UserAuthenticat
 
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
-        return AuthResponse.of(accessToken, refreshToken, jwtService.getExpirationTime(), user);
+        return buildAuthResponse(accessToken, refreshToken, jwtService.getExpirationTime(), user);
     }
 
     public String initiateForgotPassword(ForgotPasswordRequest request) throws AuthException {
@@ -525,7 +525,7 @@ public class AuthServiceImpl implements UserRegistrationService, UserAuthenticat
 
             log.info("Token refresh successful for user: {}", user.getUsername());
 
-            return AuthResponse.of(newAccessToken, newRefreshToken, expiresIn, user);
+            return buildAuthResponse(newAccessToken, newRefreshToken, expiresIn, user);
 
         } catch (AuthException e) {
             log.error("Token refresh failed", e);
@@ -677,5 +677,23 @@ public class AuthServiceImpl implements UserRegistrationService, UserAuthenticat
         } catch (Exception ex) {
             log.error("Failed to publish OTP event", ex);
         }
+    }
+
+    private AuthResponse buildAuthResponse(String accessToken, String refreshToken, Long expiresIn, User user) {
+        return AuthResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .expiresIn(expiresIn)
+                .user(AuthResponse.UserInfo.builder()
+                        .id(user.getId())
+                        .username(user.getUsername())
+                        .email(user.getEmail())
+                        .firstName(user.getFirstName())
+                        .lastName(user.getLastName())
+                        .phone(user.getPhone())
+                        .role(user.getRole())
+                        .createdAt(user.getCreatedAt())
+                        .build())
+                .build();
     }
 }

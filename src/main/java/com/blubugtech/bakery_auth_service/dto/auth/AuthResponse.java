@@ -2,23 +2,27 @@ package com.blubugtech.bakery_auth_service.dto.auth;
 
 import com.blubugtech.bakery_auth_service.entity.User;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Setter
-@Getter
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class AuthResponse {
 
-    // Getters and Setters
     @JsonProperty("access_token")
     private String accessToken;
 
     @JsonProperty("refresh_token")
     private String refreshToken;
 
+    @Builder.Default
     @JsonProperty("token_type")
     private String tokenType = "Bearer";
 
@@ -27,27 +31,12 @@ public class AuthResponse {
 
     private UserInfo user;
 
-    // Constructors
-    public AuthResponse() {
-    }
-
-    public AuthResponse(String accessToken, String refreshToken, Long expiresIn, UserInfo user) {
-        this.accessToken = accessToken;
-        this.refreshToken = refreshToken;
-        this.expiresIn = expiresIn;
-        this.user = user;
-    }
-
-    // Static factory method
-    public static AuthResponse of(String accessToken, String refreshToken, Long expiresIn, User user) {
-        return new AuthResponse(accessToken, refreshToken, expiresIn, UserInfo.from(user));
-    }
-
     // Inner class for user information
-    @Setter
-    @Getter
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class UserInfo {
-        // Getters and Setters
         private UUID id;
         private String username;
         private String email;
@@ -55,21 +44,7 @@ public class AuthResponse {
         private String lastName;
         private String phone;
         private User.Role role;
-        private LocalDateTime createdAt;
-
-        // Static factory method
-        public static UserInfo from(User user) {
-            UserInfo userInfo = new UserInfo();
-            userInfo.id = user.getId();
-            userInfo.username = user.getUsername();
-            userInfo.email = user.getEmail();
-            userInfo.firstName = user.getFirstName();
-            userInfo.lastName = user.getLastName();
-            userInfo.phone = user.getPhone();
-            userInfo.role = user.getRole();
-            userInfo.createdAt = user.getCreatedAt();
-            return userInfo;
-        }
-
+        @Builder.Default
+        private LocalDateTime createdAt = LocalDateTime.now();
     }
 }

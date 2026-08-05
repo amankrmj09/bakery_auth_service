@@ -1,13 +1,17 @@
 package com.blubugtech.bakery_auth_service.dto.user;
 
 import com.blubugtech.bakery_auth_service.entity.UserAddress;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.UUID;
 
-@Getter
-@Setter
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class UserAddressResponse {
 
     private UUID id;
@@ -18,20 +22,8 @@ public class UserAddressResponse {
     @com.fasterxml.jackson.annotation.JsonProperty("postalCode")
     private String postalCode;
     private String country;
-    private Boolean isDefault;
-
-    public static UserAddressResponse from(UserAddress entity) {
-        UserAddressResponse dto = new UserAddressResponse();
-        dto.setId(entity.getId());
-        dto.setTitle(entity.getTitle());
-        dto.setAddressLine(entity.getAddressLine());
-        dto.setCity(entity.getCity());
-        dto.setState(entity.getState());
-        dto.setPostalCode(entity.getPostalCode());
-        dto.setCountry(entity.getCountry());
-        dto.setIsDefault(entity.getIsDefault());
-        return dto;
-    }
+    @Builder.Default
+    private Boolean isDefault = false;
 
     @com.fasterxml.jackson.annotation.JsonProperty("zipCode")
     public String getZipCode() {

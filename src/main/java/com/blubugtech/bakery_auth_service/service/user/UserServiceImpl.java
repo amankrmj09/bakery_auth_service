@@ -106,7 +106,7 @@ public class UserServiceImpl implements UserProfileService, UserAccountSecurityS
     public UserResponse getUserProfile(UUID userId) throws AuthException {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AuthException("User not found"));
-        return userMapper.toDto(user);
+        return userMapper.toResponse(user);
     }
 
     // Update user profile
@@ -155,7 +155,7 @@ public class UserServiceImpl implements UserProfileService, UserAccountSecurityS
 
         User updatedUser = userRepository.save(user);
         log.info("User profile updated for ID: {}", userId);
-        return userMapper.toDto(updatedUser);
+        return userMapper.toResponse(updatedUser);
     }
 
     // Update user password
@@ -237,19 +237,19 @@ public class UserServiceImpl implements UserProfileService, UserAccountSecurityS
     // Get all users (admin function)
     public PagedModel<UserResponse> getAllUsers(Pageable pageable) {
         return new PagedModel<>(userRepository.findAll(pageable)
-                .map(UserResponse::from));
+                .map(userMapper::toResponse));
     }
 
     // Search users
     public PagedModel<UserResponse> searchUsers(String searchTerm, Pageable pageable) {
         return new PagedModel<>(userRepository.searchUsers(searchTerm, pageable)
-                .map(UserResponse::from));
+                .map(userMapper::toResponse));
     }
 
     // Get users by role
     public PagedModel<UserResponse> getUsersByRole(User.Role role, Pageable pageable) {
         return new PagedModel<>(userRepository.findByRole(role, pageable)
-                .map(UserResponse::from));
+                .map(userMapper::toResponse));
     }
 
     // Update user role (admin function)

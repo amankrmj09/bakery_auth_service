@@ -7,6 +7,7 @@ import com.blubugtech.bakery_auth_service.entity.UserAddress;
 import com.blubugtech.bakery_auth_service.exception.AuthException;
 import com.blubugtech.bakery_auth_service.repository.UserAddressRepository;
 import com.blubugtech.bakery_auth_service.repository.UserRepository;
+import com.blubugtech.bakery_auth_service.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,11 +27,12 @@ public class UserAddressServiceImpl implements UserAddressService {
 
     private final UserAddressRepository addressRepository;
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
     @Override
     public PagedModel<UserAddressResponse> getUserAddresses(UUID userId, Pageable pageable) {
         return new PagedModel<>(addressRepository.findByUserId(userId, pageable)
-                .map(UserAddressResponse::from));
+                .map(userMapper::toAddressResponse));
     }
 
     @Override
@@ -60,7 +62,7 @@ public class UserAddressServiceImpl implements UserAddressService {
             address.setIsDefault(false);
         }
 
-        return UserAddressResponse.from(addressRepository.save(address));
+        return userMapper.toAddressResponse(addressRepository.save(address));
     }
 
     @Override
@@ -79,7 +81,7 @@ public class UserAddressServiceImpl implements UserAddressService {
             address.setIsDefault(true);
         }
 
-        return UserAddressResponse.from(addressRepository.save(address));
+        return userMapper.toAddressResponse(addressRepository.save(address));
     }
 
     @Override

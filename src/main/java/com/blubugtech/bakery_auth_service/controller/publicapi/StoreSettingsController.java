@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping({"/api/store/settings", "/api/store/settings/"})
@@ -30,7 +31,7 @@ public class StoreSettingsController {
     @PutMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update store settings")
-    public ResponseEntity<StoreSettings> updateStoreSettings(@RequestBody StoreSettings updatedSettings) {
+    public ResponseEntity<StoreSettings> updateStoreSettings(@Valid @RequestBody StoreSettings updatedSettings) {
         log.info("Admin updated store settings");
         StoreSettings result = storeSettingsService.updateStoreSettings(updatedSettings);
         return ResponseEntity.ok(result);

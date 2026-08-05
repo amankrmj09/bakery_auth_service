@@ -1,17 +1,20 @@
 package com.blubugtech.bakery_auth_service.dto.user;
 
 import com.blubugtech.bakery_auth_service.entity.User;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Setter
-@Getter
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class UserResponse {
 
-    // Getters and Setters
     private UUID id;
     private String username;
     private String email;
@@ -21,34 +24,14 @@ public class UserResponse {
     private String address;
     private User.Role role;
     private User.UserStatus status;
-    private Boolean emailVerified;
+    @Builder.Default
+    private Boolean emailVerified = false;
     private LocalDateTime lastLogin;
-    private Boolean twoFactorEnabled;
-    private Boolean loginNotificationsEnabled;
-    private LocalDateTime createdAt;
-
-    // Constructors
-    public UserResponse() {
-    }
-
-    // Static factory method
-    public static UserResponse from(User user) {
-        UserResponse response = new UserResponse();
-        response.id = user.getId();
-        response.username = user.getUsername();
-        response.email = user.getEmail();
-        response.firstName = user.getFirstName();
-        response.lastName = user.getLastName();
-        response.phone = user.getPhone();
-        response.address = user.getAddress();
-        response.role = user.getRole();
-        response.status = user.getStatus();
-        response.emailVerified = user.getEmailVerified();
-        response.lastLogin = user.getLastLogin();
-        response.twoFactorEnabled = user.getTwoFactorEnabled();
-        response.loginNotificationsEnabled = user.getLoginNotificationsEnabled();
-        response.createdAt = user.getCreatedAt();
-        return response;
-    }
+    @Builder.Default
+    private Boolean twoFactorEnabled = false;
+    @Builder.Default
+    private Boolean loginNotificationsEnabled = false;
+    @Builder.Default
+    private LocalDateTime createdAt = LocalDateTime.now();
 
 }
