@@ -19,22 +19,22 @@ public class AdminSeederConfig {
     @Value("${app.admin.seed-enabled:false}")
     private boolean seedEnabled;
 
-    @Value("${app.admin.first-name:Super}")
+    @Value("${app.admin.first-name}")
     private String adminFirstName;
 
-    @Value("${app.admin.username:admin}")
+    @Value("${app.admin.username}")
     private String adminUsername;
 
-    @Value("${app.admin.last-name:Admin}")
+    @Value("${app.admin.last-name}")
     private String adminLastName;
 
-    @Value("${app.admin.email:admin@bakery.com}")
+    @Value("${app.admin.email}")
     private String adminEmail;
 
-    @Value("${app.admin.password:Admin@123}")
+    @Value("${app.admin.password}")
     private String adminPassword;
-    
-    @Value("${app.admin.phone:1234567890}")
+
+    @Value("${app.admin.phone}")
     private String adminPhone;
 
     @Bean
