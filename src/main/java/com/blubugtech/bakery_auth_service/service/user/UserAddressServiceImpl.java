@@ -13,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedModel;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,10 +28,9 @@ public class UserAddressServiceImpl implements UserAddressService {
     private final UserRepository userRepository;
 
     @Override
-    public List<UserAddressResponse> getUserAddresses(UUID userId) {
-        return addressRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
-                .map(UserAddressResponse::from)
-                .collect(Collectors.toList());
+    public PagedModel<UserAddressResponse> getUserAddresses(UUID userId, Pageable pageable) {
+        return new PagedModel<>(addressRepository.findByUserId(userId, pageable)
+                .map(UserAddressResponse::from));
     }
 
     @Override

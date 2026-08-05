@@ -1,7 +1,6 @@
 package com.blubugtech.bakery_auth_service.dto.auth;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -18,7 +17,8 @@ public class LoginRequest {
     private String password;
 
     // Constructors
-    public LoginRequest() {}
+    public LoginRequest() {
+    }
 
     public LoginRequest(String usernameOrEmail, String password) {
         this.usernameOrEmail = usernameOrEmail;

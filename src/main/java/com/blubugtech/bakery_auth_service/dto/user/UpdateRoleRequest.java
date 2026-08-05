@@ -5,4 +5,5 @@ import jakarta.validation.constraints.NotNull;
 
 public record UpdateRoleRequest(
         @NotNull User.Role role
-) {}
+) {
+}

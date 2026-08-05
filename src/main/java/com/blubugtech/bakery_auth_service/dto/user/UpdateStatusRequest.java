@@ -5,4 +5,5 @@ import jakarta.validation.constraints.NotNull;
 
 public record UpdateStatusRequest(
         @NotNull User.UserStatus status
-) {}
+) {
+}

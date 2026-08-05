@@ -51,7 +51,7 @@ repositories {
 }
 
 // extra["snippetsDir"] = file("build/generated-snippets")
-val springCloudVersion by extra("2025.0.3")
+extra.set("springCloudVersion", "2025.0.3")
 
 dependencies {
     implementation("org.blubakery.libs:bakery_common_security:1.0.5")
@@ -114,7 +114,7 @@ dependencies {
 }
 dependencyManagement {
     imports {
-        mavenBom("org.springframework.cloud:spring-cloud-dependencies:$springCloudVersion")
+        mavenBom("org.springframework.cloud:spring-cloud-dependencies:${property("springCloudVersion")}")
     }
 }
 

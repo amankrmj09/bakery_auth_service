@@ -7,7 +7,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class UserAddressRequest {
-    
+
     private String title;
 
     @NotBlank(message = "Address line is required")

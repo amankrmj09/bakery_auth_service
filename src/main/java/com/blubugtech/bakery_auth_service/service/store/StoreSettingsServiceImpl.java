@@ -3,12 +3,12 @@ package com.blubugtech.bakery_auth_service.service.store;
 import com.blubugtech.bakery_auth_service.dto.store.StoreSettings;
 import com.blubugtech.bakery_auth_service.mapper.StoreSettingsMapper;
 import com.blubugtech.bakery_auth_service.repository.StoreSettingsRepository;
-import org.blubakery.common.messaging.contract.messaging.SettingsPayload;
-import org.blubakery.common.messaging.event.SettingsEvent;
-import org.blubakery.common.messaging.constants.KafkaTopics;
-import org.springframework.kafka.core.KafkaTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.blubakery.common.messaging.constants.KafkaTopics;
+import org.blubakery.common.messaging.contract.messaging.SettingsPayload;
+import org.blubakery.common.messaging.event.SettingsEvent;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,22 +47,22 @@ public class StoreSettingsServiceImpl implements StoreSettingsService {
         if (updatedSettings.getAdminNotificationEmail() != null) {
             currentSettings.setAdminNotificationEmail(updatedSettings.getAdminNotificationEmail());
         }
-        
+
         com.blubugtech.bakery_auth_service.entity.StoreSettings savedSettings = storeSettingsRepository.save(currentSettings);
-        
+
         // Publish SettingsEvent
         SettingsPayload payload = SettingsPayload.builder()
                 .adminNotificationEmail(savedSettings.getAdminNotificationEmail())
                 .build();
         SettingsEvent event = new SettingsEvent(payload);
-        
+
         try {
             kafkaTemplate.send(KafkaTopics.SETTINGS_TOPIC, event);
             log.info("Published SettingsEvent for updated settings");
         } catch (Exception e) {
             log.error("Failed to publish SettingsEvent", e);
         }
-        
+
         return storeSettingsMapper.toDto(savedSettings);
     }
 }

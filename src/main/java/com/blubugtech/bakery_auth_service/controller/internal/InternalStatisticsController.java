@@ -1,12 +1,12 @@
 package com.blubugtech.bakery_auth_service.controller.internal;
 
-import lombok.extern.slf4j.Slf4j;
 import com.blubugtech.bakery_auth_service.service.dashboard.DashboardStatisticsService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.Operation;
 
 import java.math.BigDecimal;
 import java.util.Map;

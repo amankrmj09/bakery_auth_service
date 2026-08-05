@@ -1,23 +1,20 @@
 package com.blubugtech.bakery_auth_service.service.auth;
 
+import com.blubugtech.bakery_auth_service.constant.AuthConstants;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
-import com.blubugtech.bakery_auth_service.constant.AuthConstants;
-
-import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
 public class AuthOtpService {
 
+    private static final long OTP_VALIDITY_MINUTES = 10;
     private final StringRedisTemplate redisTemplate;
     private final Random random = new Random();
-    
-
-    private static final long OTP_VALIDITY_MINUTES = 10;
 
     public AuthOtpService(StringRedisTemplate redisTemplate) {
         this.redisTemplate = redisTemplate;
@@ -30,7 +27,7 @@ public class AuthOtpService {
         log.info("Generated Registration OTP for {}: {}", email, otp);
         return otp;
     }
-    
+
     public String verifyRegisterOtp(String email, String otp) {
         String data = redisTemplate.opsForValue().get(AuthConstants.REG_PREFIX + email);
         if (data != null) {

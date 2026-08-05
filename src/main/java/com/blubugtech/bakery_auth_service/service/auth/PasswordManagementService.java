@@ -8,6 +8,8 @@ import java.util.UUID;
 
 public interface PasswordManagementService {
     String initiateForgotPassword(ForgotPasswordRequest request) throws AuthException;
+
     void resetPassword(ResetPasswordRequest request) throws AuthException;
+
     void changePassword(UUID userId, String currentPassword, String newPassword) throws AuthException;
 }

@@ -5,21 +5,36 @@ import java.time.LocalDate;
 public enum TimeframeStrategy {
     DAILY("1d") {
         @Override
-        public LocalDate getPastDate(LocalDate today) { return today.minusDays(1); }
+        public LocalDate getPastDate(LocalDate today) {
+            return today.minusDays(1);
+        }
+
         @Override
-        public LocalDate getPreviousPeriodDate(LocalDate today) { return today.minusDays(2); }
+        public LocalDate getPreviousPeriodDate(LocalDate today) {
+            return today.minusDays(2);
+        }
     },
     WEEKLY("7d") {
         @Override
-        public LocalDate getPastDate(LocalDate today) { return today.minusDays(7); }
+        public LocalDate getPastDate(LocalDate today) {
+            return today.minusDays(7);
+        }
+
         @Override
-        public LocalDate getPreviousPeriodDate(LocalDate today) { return today.minusDays(14); }
+        public LocalDate getPreviousPeriodDate(LocalDate today) {
+            return today.minusDays(14);
+        }
     },
     MONTHLY("30d") {
         @Override
-        public LocalDate getPastDate(LocalDate today) { return today.minusMonths(1); }
+        public LocalDate getPastDate(LocalDate today) {
+            return today.minusMonths(1);
+        }
+
         @Override
-        public LocalDate getPreviousPeriodDate(LocalDate today) { return today.minusMonths(2); }
+        public LocalDate getPreviousPeriodDate(LocalDate today) {
+            return today.minusMonths(2);
+        }
     };
 
     private final String timeframe;
@@ -38,5 +53,6 @@ public enum TimeframeStrategy {
     }
 
     public abstract LocalDate getPastDate(LocalDate today);
+
     public abstract LocalDate getPreviousPeriodDate(LocalDate today);
 }

@@ -19,6 +19,7 @@ public class SecurityConfigProperties {
         private int strength;
 
     }
+
     @Setter
     @Getter
     public static class Login {

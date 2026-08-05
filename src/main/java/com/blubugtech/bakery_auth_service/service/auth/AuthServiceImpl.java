@@ -5,8 +5,8 @@ import com.blubugtech.bakery_auth_service.entity.User;
 import com.blubugtech.bakery_auth_service.exception.*;
 import com.blubugtech.bakery_auth_service.security.CustomUserDetails;
 import com.blubugtech.bakery_auth_service.security.JwtService;
-import com.blubugtech.bakery_auth_service.service.user.UserProfileService;
 import com.blubugtech.bakery_auth_service.service.user.UserAccountSecurityService;
+import com.blubugtech.bakery_auth_service.service.user.UserProfileService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -29,11 +29,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-
-import com.blubugtech.bakery_auth_service.service.auth.UserRegistrationService;
-import com.blubugtech.bakery_auth_service.service.auth.UserAuthenticationService;
-import com.blubugtech.bakery_auth_service.service.auth.PasswordManagementService;
-import com.blubugtech.bakery_auth_service.service.auth.TokenValidationService;
 
 @Service
 @Transactional
@@ -128,7 +123,7 @@ public class AuthServiceImpl implements UserRegistrationService, UserAuthenticat
             // Get user from authentication context
             CustomUserDetails userDetails =
                     (CustomUserDetails) authentication.getPrincipal();
-            User user = userDetails.getUser();
+            User user = userDetails.user();
 
             // Record successful login
             userAccountSecurityService.recordSuccessfulLogin(user.getId());
@@ -219,7 +214,7 @@ public class AuthServiceImpl implements UserRegistrationService, UserAuthenticat
             }
             CustomUserDetails userDetails =
                     (CustomUserDetails) authentication.getPrincipal();
-            User user = userDetails.getUser();
+            User user = userDetails.user();
 
             if (user.getTwoFactorEnabled() != null && !user.getTwoFactorEnabled()) {
                 // Bypass 2FA
@@ -364,36 +359,37 @@ public class AuthServiceImpl implements UserRegistrationService, UserAuthenticat
             throw new AuthException("Failed to resend login OTP");
         }
     }
+
     public LoginInitResponse initiateAdminLogin(LoginRequest request) throws AuthException {
         log.info("Processing admin login for user: {}", request.getUsernameOrEmail());
         try {
             if (userAccountSecurityService.isAccountLocked(request.getUsernameOrEmail())) {
                 throw new AccountLockedException("Account locked");
             }
-            
+
             Authentication authentication;
             try {
                 authentication = authenticationManager.authenticate(
                         new UsernamePasswordAuthenticationToken(
                                 request.getUsernameOrEmail(), request.getPassword()
                         )
-                    );
+                );
             } catch (AuthenticationException e) {
                 log.error("Authentication failed", e);
                 userAccountSecurityService.recordFailedLogin(request.getUsernameOrEmail());
                 throw new InvalidCredentialsException("Invalid credentials");
             }
-            
+
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-            User user = userDetails.getUser();
-            
+            User user = userDetails.user();
+
             if (user.getRole() != User.Role.ADMIN) {
                 throw new org.blubakery.common.security.exception.security.UnauthorizedAccessException("Access denied. Admin role required.");
             }
-            
+
             String otp = authOtpService.generateAndSaveLoginOtp(user.getEmail());
             sendOtpEvent(user.getId(), user.getEmail(), user.getFirstName(), user.getLastName(), user.getPhone(), otp);
-            
+
             return LoginInitResponse.builder()
                     .requiresOtp(true)
                     .message(otp)
@@ -414,7 +410,7 @@ public class AuthServiceImpl implements UserRegistrationService, UserAuthenticat
         }
         if (userOptional.isEmpty()) throw new UserNotFoundException("User not found");
         User user = userOptional.get();
-        
+
         if (user.getRole() != User.Role.ADMIN) {
             throw new org.blubakery.common.security.exception.security.UnauthorizedAccessException("Access denied. Admin role required.");
         }

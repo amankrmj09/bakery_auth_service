@@ -9,12 +9,20 @@ import org.springframework.data.domain.Pageable;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.data.web.PagedModel;
+
 public interface AdminUserService {
-    Page<UserResponse> getAllUsers(Pageable pageable);
-    Page<UserResponse> searchUsers(String searchTerm, Pageable pageable);
-    Page<UserResponse> getUsersByRole(User.Role role, Pageable pageable);
+    PagedModel<UserResponse> getAllUsers(Pageable pageable);
+
+    PagedModel<UserResponse> searchUsers(String searchTerm, Pageable pageable);
+
+    PagedModel<UserResponse> getUsersByRole(User.Role role, Pageable pageable);
+
     void updateUserRole(UUID userId, User.Role newRole) throws AuthException;
+
     void updateUserStatus(UUID userId, User.UserStatus status) throws AuthException;
+
     void deleteUser(UUID userId) throws AuthException;
-    Map<String, Long> getUserStatistics();
+
+    com.blubugtech.bakery_auth_service.dto.user.UserStatisticsResponse getUserStatistics();
 }

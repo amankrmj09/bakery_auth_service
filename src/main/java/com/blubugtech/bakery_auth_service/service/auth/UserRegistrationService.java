@@ -7,8 +7,12 @@ import com.blubugtech.bakery_auth_service.exception.AuthException;
 
 public interface UserRegistrationService {
     AuthResponse register(RegisterRequest request) throws AuthException;
+
     String initiateRegister(RegisterRequest request) throws AuthException;
+
     AuthResponse verifyRegister(RegisterVerifyRequest request) throws AuthException;
+
     String resendRegisterOtp(String email) throws AuthException;
+
     void verifyEmail(java.util.UUID userId) throws AuthException;
 }

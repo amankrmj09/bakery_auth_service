@@ -28,7 +28,8 @@ public class UserResponse {
     private LocalDateTime createdAt;
 
     // Constructors
-    public UserResponse() {}
+    public UserResponse() {
+    }
 
     // Static factory method
     public static UserResponse from(User user) {

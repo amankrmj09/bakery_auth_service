@@ -10,10 +10,16 @@ import java.util.UUID;
 
 public interface UserProfileService {
     Optional<User> findByUsernameOrEmail(String usernameOrEmail);
+
     Optional<User> findById(UUID userId);
+
     Optional<User> findByUsername(String username);
+
     Optional<User> findByEmail(String email);
+
     UserResponse getUserProfile(UUID userId) throws AuthException;
+
     UserResponse updateUserProfile(UUID userId, UserProfileUpdateRequest request) throws AuthException;
+
     boolean userExists(String usernameOrEmail);
 }

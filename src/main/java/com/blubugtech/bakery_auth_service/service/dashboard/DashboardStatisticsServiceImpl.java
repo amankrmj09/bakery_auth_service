@@ -4,6 +4,7 @@ import com.blubugtech.bakery_auth_service.entity.DashboardStatistics;
 import com.blubugtech.bakery_auth_service.entity.DashboardStatisticsSnapshot;
 import com.blubugtech.bakery_auth_service.repository.DashboardStatisticsRepository;
 import com.blubugtech.bakery_auth_service.repository.DashboardStatisticsSnapshotRepository;
+import com.blubugtech.bakery_auth_service.service.dashboard.strategy.TimeframeStrategy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -12,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import com.blubugtech.bakery_auth_service.service.dashboard.strategy.TimeframeStrategy;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +36,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     }
 
     @Transactional
-    public Map<String, Object> getStatisticsWithGrowth(String timeframe) {
+    public com.blubugtech.bakery_auth_service.dto.user.DashboardStatsResponse getStatisticsWithGrowth(String timeframe) {
         DashboardStatistics currentStats = getStatistics();
         LocalDate today = LocalDate.now();
         TimeframeStrategy strategy = TimeframeStrategy.fromString(timeframe);
@@ -71,7 +71,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
         }
 
         List<DashboardStatisticsSnapshot> snapshots = snapshotRepository.findBySnapshotDateBetweenOrderBySnapshotDateAsc(pastDate, today);
-        List<Map<String, Object>> chartData = new java.util.ArrayList<>();
+        List<com.blubugtech.bakery_auth_service.dto.user.ChartDataResponse> chartData = new java.util.ArrayList<>();
 
         BigDecimal previousCumulative = BigDecimal.ZERO;
         if (!snapshots.isEmpty()) {
@@ -82,28 +82,30 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
         }
 
         for (DashboardStatisticsSnapshot snap : snapshots) {
-            Map<String, Object> dataPoint = new HashMap<>();
-            dataPoint.put("name", snap.getSnapshotDate().toString()); // Simple ISO date string
-
             BigDecimal currentCumulative = snap.getTotalRevenue();
             BigDecimal dailyRevenue = currentCumulative.subtract(previousCumulative);
             if (dailyRevenue.compareTo(BigDecimal.ZERO) < 0) {
                 dailyRevenue = BigDecimal.ZERO;
             }
-            dataPoint.put("revenue", dailyRevenue);
 
-            chartData.add(dataPoint);
+            chartData.add(com.blubugtech.bakery_auth_service.dto.user.ChartDataResponse.builder()
+                .name(snap.getSnapshotDate().toString())
+                .revenue(dailyRevenue)
+                .build());
+
             previousCumulative = currentCumulative;
         }
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("totalUsers", currentStats.getTotalUsers());
-        response.put("activeOrders", currentStats.getActiveOrders());
-        response.put("totalRevenue", currentStats.getTotalRevenue());
-        response.put("growthRate", growthRate);
-        response.put("timeframe", timeframe);
-        response.put("chartData", chartData);
-        return response;
+        return com.blubugtech.bakery_auth_service.dto.user.DashboardStatsResponse.builder()
+                .currentPeriodRevenue(currentPeriodRevenue)
+                .previousPeriodRevenue(previousPeriodRevenue)
+                .growthPercentage(BigDecimal.valueOf(growthRate))
+                .totalUsers(currentStats.getTotalUsers())
+                .activeOrders(currentStats.getActiveOrders())
+                .totalRevenue(currentStats.getTotalRevenue())
+                .timeframe(timeframe)
+                .chartData(chartData)
+                .build();
     }
 
     private void updateSnapshot(DashboardStatistics stats) {

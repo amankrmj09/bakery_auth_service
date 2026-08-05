@@ -13,6 +13,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PagedModel;
 
 @RestController
 @RequestMapping("/api/users/addresses")
@@ -28,9 +32,18 @@ public class UserAddressController {
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get all addresses for current user")
-    public ResponseEntity<List<UserAddressResponse>> getUserAddresses(Authentication authentication) {
+    public ResponseEntity<PagedModel<UserAddressResponse>> getUserAddresses(
+            Authentication authentication,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDir) {
+        
         UUID userId = UUID.fromString(authentication.getName());
-        return ResponseEntity.ok(userAddressService.getUserAddresses(userId));
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
+        
+        return ResponseEntity.ok(userAddressService.getUserAddresses(userId, pageable));
     }
 
     @PostMapping

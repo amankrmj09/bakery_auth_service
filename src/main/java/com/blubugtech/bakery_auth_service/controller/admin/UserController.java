@@ -1,8 +1,8 @@
 package com.blubugtech.bakery_auth_service.controller.admin;
 
-import com.blubugtech.bakery_auth_service.dto.user.UserResponse;
 import com.blubugtech.bakery_auth_service.dto.user.UpdateRoleRequest;
 import com.blubugtech.bakery_auth_service.dto.user.UpdateStatusRequest;
+import com.blubugtech.bakery_auth_service.dto.user.UserResponse;
 import com.blubugtech.bakery_auth_service.entity.User;
 import com.blubugtech.bakery_auth_service.exception.AuthException;
 import com.blubugtech.bakery_auth_service.service.dashboard.DashboardStatisticsService;
@@ -70,10 +70,10 @@ public class UserController {
         Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        Page<UserResponse> users = adminUserService.getAllUsers(pageable);
+        PagedModel<UserResponse> users = adminUserService.getAllUsers(pageable);
 
-        log.info("All users retrieved, count: {}", users.getContent().size());
-        return ResponseEntity.ok(new PagedModel<>(users));
+        log.info("All users retrieved");
+        return ResponseEntity.ok(users);
     }
 
     // Search users (Admin only)
@@ -92,10 +92,10 @@ public class UserController {
         Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        Page<UserResponse> users = adminUserService.searchUsers(query, pageable);
+        PagedModel<UserResponse> users = adminUserService.searchUsers(query, pageable);
 
-        log.info("User search completed, results: {}", users.getContent().size());
-        return ResponseEntity.ok(new PagedModel<>(users));
+        log.info("User search completed");
+        return ResponseEntity.ok(users);
     }
 
     // Get users by role (Admin only)
@@ -115,10 +115,10 @@ public class UserController {
         Pageable pageable = PageRequest.of(page, size, sort);
 
         User.Role userRole = User.Role.valueOf(role.toUpperCase());
-        Page<UserResponse> users = adminUserService.getUsersByRole(userRole, pageable);
+        PagedModel<UserResponse> users = adminUserService.getUsersByRole(userRole, pageable);
 
-        log.info("Users by role retrieved, count: {}", users.getContent().size());
-        return ResponseEntity.ok(new PagedModel<>(users));
+        log.info("Users by role retrieved");
+        return ResponseEntity.ok(users);
     }
 
     // Update user role (Admin only)
@@ -183,10 +183,10 @@ public class UserController {
     @GetMapping("/admin/statistics")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get user statistics (Admin)")
-    public ResponseEntity<Map<String, Long>> getUserStatistics() {
+    public ResponseEntity<com.blubugtech.bakery_auth_service.dto.user.UserStatisticsResponse> getUserStatistics() {
         log.info("Get user statistics request received (admin)");
 
-        Map<String, Long> statistics = adminUserService.getUserStatistics();
+        com.blubugtech.bakery_auth_service.dto.user.UserStatisticsResponse statistics = adminUserService.getUserStatistics();
 
         log.info("User statistics retrieved");
         return ResponseEntity.ok(statistics);
@@ -196,10 +196,10 @@ public class UserController {
     @GetMapping("/admin/dashboard-stats")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get dashboard statistics (Admin)")
-    public ResponseEntity<Map<String, Object>> getDashboardStats(
+    public ResponseEntity<com.blubugtech.bakery_auth_service.dto.user.DashboardStatsResponse> getDashboardStats(
             @RequestParam(defaultValue = "1m") String timeframe) {
         log.info("Get dashboard statistics request received (admin) for timeframe: {}", timeframe);
-        Map<String, Object> stats = dashboardStatisticsService.getStatisticsWithGrowth(timeframe);
+        com.blubugtech.bakery_auth_service.dto.user.DashboardStatsResponse stats = dashboardStatisticsService.getStatisticsWithGrowth(timeframe);
         return ResponseEntity.ok(stats);
     }
 }

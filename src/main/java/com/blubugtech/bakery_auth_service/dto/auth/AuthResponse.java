@@ -1,7 +1,7 @@
 package com.blubugtech.bakery_auth_service.dto.auth;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.blubugtech.bakery_auth_service.entity.User;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -28,7 +28,8 @@ public class AuthResponse {
     private UserInfo user;
 
     // Constructors
-    public AuthResponse() {}
+    public AuthResponse() {
+    }
 
     public AuthResponse(String accessToken, String refreshToken, Long expiresIn, UserInfo user) {
         this.accessToken = accessToken;

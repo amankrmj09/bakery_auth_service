@@ -93,7 +93,8 @@ public class User {
     private LocalDateTime updatedAt;
 
     // Constructors
-    public User() {}
+    public User() {
+    }
 
     public User(String username, String email, String password, String firstName, String lastName) {
         this.username = username;

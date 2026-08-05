@@ -1,30 +1,27 @@
 package com.blubugtech.bakery_auth_service.controller.publicapi;
 
-import lombok.extern.slf4j.Slf4j;
 import com.blubugtech.bakery_auth_service.dto.auth.*;
 import com.blubugtech.bakery_auth_service.exception.AuthException;
-import com.blubugtech.bakery_auth_service.service.auth.AuthService;
 import com.blubugtech.bakery_auth_service.security.JwtService;
+import com.blubugtech.bakery_auth_service.service.auth.PasswordManagementService;
+import com.blubugtech.bakery_auth_service.service.auth.TokenValidationService;
+import com.blubugtech.bakery_auth_service.service.auth.UserAuthenticationService;
+import com.blubugtech.bakery_auth_service.service.auth.UserRegistrationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
+import org.blubakery.common.feign.contract.feign.MessageResponse;
+import org.blubakery.common.security.exception.security.InvalidTokenException;
+import org.blubakery.common.security.exception.security.UnauthenticatedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.Operation;
-
-import org.blubakery.common.feign.contract.feign.MessageResponse;
-import org.blubakery.common.security.exception.security.UnauthenticatedException;
-import org.blubakery.common.security.exception.security.InvalidTokenException;
-import java.util.Map;
-import java.util.UUID;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
-import com.blubugtech.bakery_auth_service.service.auth.UserRegistrationService;
-import com.blubugtech.bakery_auth_service.service.auth.UserAuthenticationService;
-import com.blubugtech.bakery_auth_service.service.auth.PasswordManagementService;
-import com.blubugtech.bakery_auth_service.service.auth.TokenValidationService;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/auth")

@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedModel;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,10 +23,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-
-import com.blubugtech.bakery_auth_service.service.user.UserProfileService;
-import com.blubugtech.bakery_auth_service.service.user.UserAccountSecurityService;
-import com.blubugtech.bakery_auth_service.service.user.AdminUserService;
 
 @Service
 @Transactional
@@ -238,21 +235,21 @@ public class UserServiceImpl implements UserProfileService, UserAccountSecurityS
     }
 
     // Get all users (admin function)
-    public Page<UserResponse> getAllUsers(Pageable pageable) {
-        return userRepository.findAll(pageable)
-                .map(UserResponse::from);
+    public PagedModel<UserResponse> getAllUsers(Pageable pageable) {
+        return new PagedModel<>(userRepository.findAll(pageable)
+                .map(UserResponse::from));
     }
 
     // Search users
-    public Page<UserResponse> searchUsers(String searchTerm, Pageable pageable) {
-        return userRepository.searchUsers(searchTerm, pageable)
-                .map(UserResponse::from);
+    public PagedModel<UserResponse> searchUsers(String searchTerm, Pageable pageable) {
+        return new PagedModel<>(userRepository.searchUsers(searchTerm, pageable)
+                .map(UserResponse::from));
     }
 
     // Get users by role
-    public Page<UserResponse> getUsersByRole(User.Role role, Pageable pageable) {
-        return userRepository.findByRole(role, pageable)
-                .map(UserResponse::from);
+    public PagedModel<UserResponse> getUsersByRole(User.Role role, Pageable pageable) {
+        return new PagedModel<>(userRepository.findByRole(role, pageable)
+                .map(UserResponse::from));
     }
 
     // Update user role (admin function)
@@ -297,20 +294,20 @@ public class UserServiceImpl implements UserProfileService, UserAccountSecurityS
 
     // Get user statistics
     @org.springframework.cache.annotation.Cacheable(value = "user_statistics")
-    public Map<String, Long> getUserStatistics() {
+    public com.blubugtech.bakery_auth_service.dto.user.UserStatisticsResponse getUserStatistics() {
         Object[] stats = userRepository.getUserStatistics();
-        Map<String, Long> statisticsMap = new HashMap<>();
+        com.blubugtech.bakery_auth_service.dto.user.UserStatisticsResponse response = new com.blubugtech.bakery_auth_service.dto.user.UserStatisticsResponse();
 
         if (stats.length > 0) {
             Object[] row = (Object[]) stats[0];
-            statisticsMap.put("totalUsers", ((Number) row[0]).longValue());
-            statisticsMap.put("TOTAL_USERS", ((Number) row[0]).longValue()); // Added for frontend compatibility
-            statisticsMap.put("activeUsers", ((Number) row[1]).longValue());
-            statisticsMap.put("verifiedUsers", ((Number) row[2]).longValue());
-            statisticsMap.put("adminUsers", ((Number) row[3]).longValue());
+            response.setTotalUsers(((Number) row[0]).longValue());
+            response.setTOTAL_USERS(((Number) row[0]).longValue()); // Added for frontend compatibility
+            response.setActiveUsers(((Number) row[1]).longValue());
+            response.setVerifiedUsers(((Number) row[2]).longValue());
+            response.setAdminUsers(((Number) row[3]).longValue());
         }
 
-        return statisticsMap;
+        return response;
     }
 
     // Check if user exists

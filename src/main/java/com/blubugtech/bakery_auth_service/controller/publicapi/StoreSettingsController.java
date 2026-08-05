@@ -1,13 +1,13 @@
 package com.blubugtech.bakery_auth_service.controller.publicapi;
 
-import lombok.extern.slf4j.Slf4j;
 import com.blubugtech.bakery_auth_service.dto.store.StoreSettings;
 import com.blubugtech.bakery_auth_service.service.store.StoreSettingsService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.Operation;
 
 @RestController
 @RequestMapping({"/api/store/settings", "/api/store/settings/"})

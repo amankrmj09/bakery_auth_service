@@ -34,7 +34,8 @@ public class UserProfileUpdateRequest {
     private Boolean loginNotificationsEnabled;
 
     // Constructors
-    public UserProfileUpdateRequest() {}
+    public UserProfileUpdateRequest() {
+    }
 
     public UserProfileUpdateRequest(String username, String email, String firstName, String lastName) {
         this.username = username;

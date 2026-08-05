@@ -43,6 +43,15 @@ public class UserAddress {
 
     @Column(name = "is_default")
     private Boolean isDefault = false;
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    public UserAddress() {
+    }
 
     public String getZipCode() {
         return postalCode;
@@ -51,14 +60,4 @@ public class UserAddress {
     public void setZipCode(String zipCode) {
         this.postalCode = zipCode;
     }
-
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    public UserAddress() {}
 }

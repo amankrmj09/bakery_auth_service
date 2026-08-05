@@ -6,5 +6,6 @@ import com.blubugtech.bakery_auth_service.exception.AuthException;
 
 public interface TokenValidationService {
     AuthResponse refreshToken(String refreshToken) throws AuthException;
+
     TokenValidationResponse validateToken(String token);
 }

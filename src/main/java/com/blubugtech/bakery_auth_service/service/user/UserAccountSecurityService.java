@@ -8,12 +8,20 @@ import java.util.UUID;
 
 public interface UserAccountSecurityService {
     User createUser(RegisterRequest request) throws AuthException;
+
     void updatePassword(UUID userId, String oldPassword, String newPassword) throws AuthException;
+
     void resetPassword(UUID userId, String newPassword) throws AuthException;
+
     void recordSuccessfulLogin(UUID userId) throws AuthException;
+
     void recordFailedLogin(String usernameOrEmail);
+
     boolean isAccountLocked(String usernameOrEmail);
+
     void unlockAccount(UUID userId) throws AuthException;
+
     void verifyEmail(UUID userId) throws AuthException;
+
     boolean validateCredentials(String usernameOrEmail, String password);
 }

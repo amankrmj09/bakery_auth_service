@@ -1,9 +1,9 @@
 package com.blubugtech.bakery_auth_service.security;
 
-import lombok.extern.slf4j.Slf4j;
 import com.blubugtech.bakery_auth_service.entity.User;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
