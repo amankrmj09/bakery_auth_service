@@ -12,8 +12,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.blubakery.common.messaging.constants.KafkaTopics;
-import org.blubakery.common.messaging.contract.messaging.UserPayload;
-import org.blubakery.common.messaging.event.UserEvent;
+import org.blubakery.common.messaging.user.UserPayload;
+import org.blubakery.common.messaging.user.UserEvent;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -232,7 +232,7 @@ public class AuthServiceImpl implements UserRegistrationService, UserAuthenticat
                             }
                         }
 
-                        org.blubakery.common.messaging.contract.messaging.UserPayload payload = org.blubakery.common.messaging.contract.messaging.UserPayload.builder()
+                        org.blubakery.common.messaging.user.UserPayload payload = org.blubakery.common.messaging.user.UserPayload.builder()
                                 .userId(user.getId())
                                 .email(user.getEmail())
                                 .firstName(user.getFirstName())
@@ -242,7 +242,7 @@ public class AuthServiceImpl implements UserRegistrationService, UserAuthenticat
                                 .location("Unknown Location")
                                 .timestamp(java.time.LocalDateTime.now())
                                 .build();
-                        org.blubakery.common.messaging.event.UserEvent event = new org.blubakery.common.messaging.event.UserEvent();
+                        org.blubakery.common.messaging.user.UserEvent event = new org.blubakery.common.messaging.user.UserEvent();
                         event.setEventId(java.util.UUID.randomUUID().toString());
                         event.setEventType("NEW_SIGN_IN");
                         event.setTimestamp(java.time.Instant.now());
@@ -610,7 +610,7 @@ public class AuthServiceImpl implements UserRegistrationService, UserAuthenticat
                     Map<String, Object> notificationReq = new HashMap<>();
                     notificationReq.put("type", "EMAIL");
                     notificationReq.put("recipientEmail", user.getEmail());
-                    org.blubakery.common.messaging.contract.messaging.UserPayload payload = org.blubakery.common.messaging.contract.messaging.UserPayload.builder()
+                    org.blubakery.common.messaging.user.UserPayload payload = org.blubakery.common.messaging.user.UserPayload.builder()
                             .userId(user.getId())
                             .email(user.getEmail())
                             .firstName(user.getFirstName())
@@ -654,7 +654,7 @@ public class AuthServiceImpl implements UserRegistrationService, UserAuthenticat
 
     private void sendOtpEvent(UUID userId, String email, String firstName, String lastName, String phone, String otp) {
         try {
-            org.blubakery.common.messaging.contract.messaging.UserPayload payload = org.blubakery.common.messaging.contract.messaging.UserPayload.builder()
+            org.blubakery.common.messaging.user.UserPayload payload = org.blubakery.common.messaging.user.UserPayload.builder()
                     .userId(userId)
                     .email(email)
                     .firstName(firstName)
