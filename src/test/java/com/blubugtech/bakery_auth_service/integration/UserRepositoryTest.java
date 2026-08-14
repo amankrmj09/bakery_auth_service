@@ -1,6 +1,7 @@
-package com.blubugtech.bakery_auth_service.repository;
+package com.blubugtech.bakery_auth_service.integration;
 
 import com.blubugtech.bakery_auth_service.entity.User;
+import com.blubugtech.bakery_auth_service.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

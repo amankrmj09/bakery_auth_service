@@ -1,4 +1,4 @@
-package com.blubugtech.bakery_auth_service.service.auth;
+package com.blubugtech.bakery_auth_service.unit;
 
 import com.blubugtech.bakery_auth_service.dto.auth.AuthResponse;
 import com.blubugtech.bakery_auth_service.dto.auth.LoginRequest;
@@ -9,6 +9,8 @@ import com.blubugtech.bakery_auth_service.security.CustomUserDetails;
 import com.blubugtech.bakery_auth_service.security.JwtService;
 import com.blubugtech.bakery_auth_service.service.user.UserAccountSecurityService;
 import com.blubugtech.bakery_auth_service.service.user.UserProfileService;
+import com.blubugtech.bakery_auth_service.service.auth.AuthServiceImpl;
+import com.blubugtech.bakery_auth_service.service.auth.AuthOtpService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
