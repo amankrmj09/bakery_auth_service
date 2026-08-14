@@ -9,14 +9,14 @@ import org.springframework.data.domain.Pageable;
 import java.util.Map;
 import java.util.UUID;
 
-import org.springframework.data.web.PagedModel;
+import org.blubakery.common.core.dto.RestPageResponse;
 
 public interface AdminUserService {
-    PagedModel<UserResponse> getAllUsers(Pageable pageable);
+    RestPageResponse<UserResponse> getAllUsers(Pageable pageable);
 
-    PagedModel<UserResponse> searchUsers(String searchTerm, Pageable pageable);
+    RestPageResponse<UserResponse> searchUsers(String searchTerm, Pageable pageable);
 
-    PagedModel<UserResponse> getUsersByRole(User.Role role, Pageable pageable);
+    RestPageResponse<UserResponse> getUsersByRole(User.Role role, Pageable pageable);
 
     void updateUserRole(UUID userId, User.Role newRole) throws AuthException;
 

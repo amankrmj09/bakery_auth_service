@@ -14,8 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PagedModel;
+import org.blubakery.common.core.dto.RestPageResponse;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,9 +31,10 @@ public class UserAddressServiceImpl implements UserAddressService {
     private final UserMapper userMapper;
 
     @Override
-    public PagedModel<UserAddressResponse> getUserAddresses(UUID userId, Pageable pageable) {
-        return new PagedModel<>(addressRepository.findByUserId(userId, pageable)
-                .map(userMapper::toAddressResponse));
+    public RestPageResponse<UserAddressResponse> getUserAddresses(UUID userId, Pageable pageable) {
+        Page<UserAddressResponse> page = addressRepository.findByUserId(userId, pageable)
+                .map(userMapper::toAddressResponse);
+        return new RestPageResponse<>(page.getContent(), page.getPageable(), page.getTotalElements());
     }
 
     @Override

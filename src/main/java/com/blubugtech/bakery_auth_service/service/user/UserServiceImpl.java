@@ -13,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PagedModel;
+import org.blubakery.common.core.dto.RestPageResponse;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -235,21 +235,24 @@ public class UserServiceImpl implements UserProfileService, UserAccountSecurityS
     }
 
     // Get all users (admin function)
-    public PagedModel<UserResponse> getAllUsers(Pageable pageable) {
-        return new PagedModel<>(userRepository.findAll(pageable)
-                .map(userMapper::toResponse));
+    public RestPageResponse<UserResponse> getAllUsers(Pageable pageable) {
+        Page<UserResponse> page = userRepository.findAll(pageable)
+                .map(userMapper::toResponse);
+        return new RestPageResponse<>(page.getContent(), page.getPageable(), page.getTotalElements());
     }
 
     // Search users
-    public PagedModel<UserResponse> searchUsers(String searchTerm, Pageable pageable) {
-        return new PagedModel<>(userRepository.searchUsers(searchTerm, pageable)
-                .map(userMapper::toResponse));
+    public RestPageResponse<UserResponse> searchUsers(String searchTerm, Pageable pageable) {
+        Page<UserResponse> page = userRepository.searchUsers(searchTerm, pageable)
+                .map(userMapper::toResponse);
+        return new RestPageResponse<>(page.getContent(), page.getPageable(), page.getTotalElements());
     }
 
     // Get users by role
-    public PagedModel<UserResponse> getUsersByRole(User.Role role, Pageable pageable) {
-        return new PagedModel<>(userRepository.findByRole(role, pageable)
-                .map(userMapper::toResponse));
+    public RestPageResponse<UserResponse> getUsersByRole(User.Role role, Pageable pageable) {
+        Page<UserResponse> page = userRepository.findByRole(role, pageable)
+                .map(userMapper::toResponse);
+        return new RestPageResponse<>(page.getContent(), page.getPageable(), page.getTotalElements());
     }
 
     // Update user role (admin function)

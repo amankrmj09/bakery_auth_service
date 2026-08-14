@@ -19,7 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PagedModel;
+import org.blubakery.common.core.dto.RestPageResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -59,7 +59,7 @@ public class UserController {
     @GetMapping("/admin/all")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get all users (Admin)")
-    public ResponseEntity<PagedModel<UserResponse>> getAllUsers(
+    public ResponseEntity<RestPageResponse<UserResponse>> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
@@ -70,7 +70,7 @@ public class UserController {
         Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        PagedModel<UserResponse> users = adminUserService.getAllUsers(pageable);
+        RestPageResponse<UserResponse> users = adminUserService.getAllUsers(pageable);
 
         log.info("All users retrieved");
         return ResponseEntity.ok(users);
@@ -80,7 +80,7 @@ public class UserController {
     @GetMapping("/admin/search")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Search users by query (Admin)")
-    public ResponseEntity<PagedModel<UserResponse>> searchUsers(
+    public ResponseEntity<RestPageResponse<UserResponse>> searchUsers(
             @RequestParam String query,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -92,7 +92,7 @@ public class UserController {
         Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        PagedModel<UserResponse> users = adminUserService.searchUsers(query, pageable);
+        RestPageResponse<UserResponse> users = adminUserService.searchUsers(query, pageable);
 
         log.info("User search completed");
         return ResponseEntity.ok(users);
@@ -102,7 +102,7 @@ public class UserController {
     @GetMapping("/admin/role/{role}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get users by role (Admin)")
-    public ResponseEntity<PagedModel<UserResponse>> getUsersByRole(
+    public ResponseEntity<RestPageResponse<UserResponse>> getUsersByRole(
             @PathVariable String role,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -115,7 +115,7 @@ public class UserController {
         Pageable pageable = PageRequest.of(page, size, sort);
 
         User.Role userRole = User.Role.valueOf(role.toUpperCase());
-        PagedModel<UserResponse> users = adminUserService.getUsersByRole(userRole, pageable);
+        RestPageResponse<UserResponse> users = adminUserService.getUsersByRole(userRole, pageable);
 
         log.info("Users by role retrieved");
         return ResponseEntity.ok(users);

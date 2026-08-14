@@ -54,10 +54,10 @@ repositories {
 extra.set("springCloudVersion", "2025.0.3")
 
 dependencies {
-    implementation("org.blubakery.libs:bakery_common_security:2.0.0")
+    implementation("org.blubakery.libs:bakery_common_security:2.0.1")
     implementation("org.blubakery.libs:bakery_common_messaging:2.0.0")
-    implementation("org.blubakery.libs:bakery_common_feign:2.0.0")
-    implementation("org.blubakery.libs:bakery_common_core:2.0.0")
+    implementation("org.blubakery.libs:bakery_common_feign:2.0.1")
+    implementation("org.blubakery.libs:bakery_common_core:2.0.1")
     // 1. Shared Custom Libraries
     
     

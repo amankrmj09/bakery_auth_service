@@ -7,10 +7,10 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PagedModel;
+import org.blubakery.common.core.dto.RestPageResponse;
 
 public interface UserAddressService {
-    PagedModel<UserAddressResponse> getUserAddresses(UUID userId, Pageable pageable);
+    RestPageResponse<UserAddressResponse> getUserAddresses(UUID userId, Pageable pageable);
 
     UserAddressResponse addAddress(UUID userId, UserAddressRequest request);
 

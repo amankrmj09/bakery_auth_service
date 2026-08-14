@@ -19,7 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PagedModel;
+import org.blubakery.common.core.dto.RestPageResponse;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -78,7 +78,7 @@ public class UserAddressServiceImplTest {
         when(userMapper.toAddressResponse(testAddress)).thenReturn(response);
 
         // Act
-        PagedModel<UserAddressResponse> result = addressService.getUserAddresses(testUserId, pageable);
+        RestPageResponse<UserAddressResponse> result = addressService.getUserAddresses(testUserId, pageable);
 
         // Assert
         assertThat(result.getContent()).hasSize(1);

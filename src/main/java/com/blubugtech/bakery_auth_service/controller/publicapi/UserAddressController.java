@@ -16,7 +16,7 @@ import java.util.UUID;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PagedModel;
+import org.blubakery.common.core.dto.RestPageResponse;
 
 @RestController
 @RequestMapping("/api/users/addresses")
@@ -32,7 +32,7 @@ public class UserAddressController {
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get all addresses for current user")
-    public ResponseEntity<PagedModel<UserAddressResponse>> getUserAddresses(
+    public ResponseEntity<RestPageResponse<UserAddressResponse>> getUserAddresses(
             Authentication authentication,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
