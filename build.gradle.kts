@@ -2,7 +2,7 @@ plugins {
     java
     id("org.springframework.boot") version "3.5.15"
     id("io.spring.dependency-management") version "1.1.7"
-    // id("org.asciidoctor.jvm.convert") version "4.0.3"
+    id("info.solidsoft.pitest") version "1.19.0"
 }
 
 description = "Authentication and Authorization Service for Bakery"
@@ -99,7 +99,6 @@ dependencies {
     
     annotationProcessor("org.projectlombok:lombok")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
-    runtimeOnly("org.springframework.boot:spring-boot-docker-compose")
     // runtimeOnly("io.micrometer:micrometer-registry-prometheus")
     
     // 9. Testing
@@ -120,6 +119,14 @@ dependencyManagement {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+pitest {
+    junit5PluginVersion.set("1.2.1")
+    targetClasses.set(setOf("com.blubugtech.bakery_auth_service.service.*", "com.blubugtech.bakery_auth_service.entity.*"))
+    targetTests.set(setOf("com.blubugtech.bakery_auth_service.*"))
+    threads.set(4)
+    outputFormats.set(setOf("XML", "HTML"))
 }
 
 // tasks.test {
