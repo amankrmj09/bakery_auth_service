@@ -52,12 +52,4 @@ public class UserAddress {
 
     public UserAddress() {
     }
-
-    public String getZipCode() {
-        return postalCode;
-    }
-
-    public void setZipCode(String zipCode) {
-        this.postalCode = zipCode;
-    }
 }

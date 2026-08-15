@@ -19,19 +19,8 @@ public class UserAddressResponse {
     private String addressLine;
     private String city;
     private String state;
-    @com.fasterxml.jackson.annotation.JsonProperty("postalCode")
     private String postalCode;
     private String country;
     @Builder.Default
     private Boolean isDefault = false;
-
-    @com.fasterxml.jackson.annotation.JsonProperty("zipCode")
-    public String getZipCode() {
-        return postalCode;
-    }
-
-    @com.fasterxml.jackson.annotation.JsonProperty("zipCode")
-    public void setZipCode(String zipCode) {
-        this.postalCode = zipCode;
-    }
 }

@@ -53,7 +53,7 @@ public class UserAddressServiceImpl implements UserAddressService {
         address.setAddressLine(request.getAddressLine());
         address.setCity(request.getCity());
         address.setState(request.getState());
-        address.setPostalCode(request.getPostalCode() != null ? request.getPostalCode() : request.getZipCode());
+        address.setPostalCode(request.getPostalCode());
         address.setCountry(request.getCountry());
 
         // If it's the first address or explicitly set as default, make it default
@@ -75,7 +75,7 @@ public class UserAddressServiceImpl implements UserAddressService {
         address.setAddressLine(request.getAddressLine());
         address.setCity(request.getCity());
         address.setState(request.getState());
-        address.setPostalCode(request.getPostalCode() != null ? request.getPostalCode() : request.getZipCode());
+        address.setPostalCode(request.getPostalCode());
         address.setCountry(request.getCountry());
 
         if (Boolean.TRUE.equals(request.getIsDefault()) && !Boolean.TRUE.equals(address.getIsDefault())) {
